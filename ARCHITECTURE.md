@@ -49,16 +49,16 @@ flowchart TD
     subgraph LayerFuture["Future Research Scope"]
         direction LR
         CL["Clinical Literature Corpus"]:::futureScope
-        SR["Synthetic Report Generator (LLM)"]:::futureScope
+        SR["Synthetic Report Generator - LLM"]:::futureScope
         DA["Diffusion Augmentation"]:::futureScope
         SB["Clinical Sandbox Benchmark"]:::futureScope
     end
 
     %% Flow connections
     DS -->|dataset.csv + images| DP
-    DP -->|train.json (LLaVA format)| FT
-    PV -->|Base weights (frozen)| FT
-    FT -->|LoRA Adapters (models/)| DC
+    DP -->|train.json - LLaVA format| FT
+    PV -->|Base weights - frozen| FT
+    FT -->|LoRA Adapters - models dir| DC
     DC --> VC
     DC --> RG
     VC --> WD
