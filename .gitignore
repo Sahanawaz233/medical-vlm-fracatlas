@@ -68,3 +68,4 @@ models/*
 
 # Dashboard dynamic logs/temporary status scans
 dashboard/*.log
+dashboard/status.json
