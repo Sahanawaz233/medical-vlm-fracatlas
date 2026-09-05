@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Neural Architecture</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #030308;
+            --bg-panel: rgba(8, 10, 20, 0.95);
+            --text: #f1f5f9;
+            --text-dim: #cbd5e1;
+            --text-muted: #64748b;
+            --accent: #00ffc8;
+            --indigo: #6366f1;
+            --complete: #00ffc8;
+            --progress: #f59e0b;
+            --pending: #475569;
+            --future: #8b5cf6;
+            --glass-border: rgba(100, 116, 139, 0.12);
+            --node-width: 170px;
+            --node-height: 56px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, sans-serif;
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: auto;
+            min-height: 100vh;
+        }
+
+        /* Dot Grid Background stretched to full height */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 2200px;
+            background-image: radial-gradient(rgba(99, 102, 241, 0.08) 1px, transparent 1px);
+            background-size: 24px 24px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Glowing backdrops */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 40%;
+            left: 60%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.04) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        #particles {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            z-index: 30;
+            background: linear-gradient(180deg, rgba(3,3,8,0.95) 0%, transparent 100%);
+            border-bottom: 1px solid rgba(100, 116, 139, 0.05);
+        }
+        .header h1 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #fff, var(--text-dim));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Stats Bar */
+        .stats {
+            position: fixed;
+            top: 16px;
+            right: 32px;
+            display: flex;
+            gap: 4px;
+            z-index: 30;
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 4px 8px;
+        }
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 8px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+        .stat .count {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--text);
+            margin-left: 2px;
+        }
+        .dot-complete { background: var(--complete); box-shadow: 0 0 6px var(--complete); }
+        .dot-progress { background: var(--progress); box-shadow: 0 0 6px var(--progress); }
+        .dot-pending { background: var(--pending); }
+        .dot-future { background: var(--future); box-shadow: 0 0 6px var(--future); }
+
+        /* Left Panel - Architecture List */
+        .left-panel {
+            position: fixed;
+            top: 80px;
+            left: 24px;
+            bottom: 24px;
+            width: 340px;
+            background: var(--bg-panel);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            z-index: 25;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+        .left-panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.01);
+        }
+        .left-panel-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        .left-panel-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .left-panel-item {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: rgba(255, 255, 255, 0.01);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .left-panel-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+        .left-panel-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .left-panel-item-name {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .left-panel-item-status {
+            font-size: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 1.5px 5px;
+            border-radius: 4px;
+        }
+        .left-panel-item-purpose {
+            font-size: 10.5px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .status-badge-complete { background: rgba(0,255,200,0.1); color: var(--complete); border: 1px solid rgba(0,255,200,0.15); }
+        .status-badge-in_progress { background: rgba(245,158,11,0.1); color: var(--progress); border: 1px solid rgba(245,158,11,0.15); }
+        .status-badge-pending { background: rgba(71,85,105,0.1); color: var(--text-muted); border: 1px solid rgba(71,85,105,0.15); }
+        .status-badge-future { background: rgba(139,92,246,0.1); color: var(--future); border: 1px solid rgba(139,92,246,0.15); }
+
+        /* Adaptability Top Note in Left Panel */
+        .left-panel-header-note {
+            padding: 12px 20px;
+            background: rgba(0, 255, 200, 0.02);
+            border-bottom: 1px solid var(--glass-border);
+            border-left: 3px solid var(--accent);
+        }
+        .left-panel-header-note h3 {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+        .left-panel-header-note p {
+            font-size: 10.5px;
+            line-height: 1.45;
+            color: var(--text-dim);
+        }
+
+        /* Network Canvas Area - Scrolling Height */
+        .network {
+            position: absolute;
+            top: 0;
+            left: 388px;
+            right: 0;
+            height: 2200px;
+            z-index: 1;
+            pointer-events: auto;
+        }
+
+        #connections {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .conn {
+            fill: none;
+            stroke: rgba(148, 163, 184, 0.45);
+            stroke-width: 1.5;
+            transition: stroke 0.5s, stroke-width 0.5s;
+        }
+        .conn-active {
+            stroke: rgba(0, 255, 200, 0.75);
+            stroke-width: 2.2;
+            filter: drop-shadow(0 0 3px rgba(0, 255, 200, 0.4));
+        }
+        .conn-future {
+            stroke: rgba(139, 92, 246, 0.55);
+            stroke-dasharray: 4 4;
+        }
+
+        /* Scope Line divider */
+        .scope-divider {
+            position: absolute;
+            left: 5%;
+            right: 5%;
+            top: 1450px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .scope-divider::before,
+        .scope-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.15), transparent);
+        }
+        .scope-divider span {
+            color: var(--future);
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            opacity: 0.6;
+        }
+
+        /* Structured Node Capsules */
+        .node {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 10;
+        }
+        .node:hover { z-index: 15; }
+
+        .node-capsule {
+            display: flex;
+            align-items: center;
+            width: var(--node-width);
+            height: var(--node-height);
+            background: rgba(10, 15, 30, 0.85);
+            border: 1px solid var(--pending);
+            border-radius: 8px;
+            padding: 8px 12px;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px);
+            transition: border-color 0.4s, box-shadow 0.4s, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .node:hover .node-capsule {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+        }
+
+        .node-abbrev-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            transition: all 0.4s;
+            flex-shrink: 0;
+        }
+
+        .node-text {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .node-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-dim);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: color 0.3s;
+        }
+        .node-meta {
+            font-size: 8px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 1px;
+        }
+
+        /* Node Status Styling */
+        .node[data-status="complete"] .node-capsule {
+            border-color: var(--complete);
+            box-shadow: 0 0 16px rgba(0, 255, 200, 0.15);
+        }
+        .node[data-status="complete"] .node-abbrev-badge {
+            color: var(--complete);
+            background: rgba(0, 255, 200, 0.05);
+            border-color: rgba(0, 255, 200, 0.2);
+        }
+        .node[data-status="complete"] .node-name { color: var(--text); }
+
+        .node[data-status="in_progress"] .node-capsule {
+            border-color: var(--progress);
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.15);
+            animation: borderPulse 2s ease-in-out infinite;
+        }
+        .node[data-status="in_progress"] .node-abbrev-badge {
+            color: var(--progress);
+            background: rgba(245, 158, 11, 0.05);
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+        .node[data-status="in_progress"] .node-name { color: var(--text); }
+
+        .node[data-status="future"] .node-capsule {
+            border-color: var(--future);
+            border-style: dashed;
+            box-shadow: 0 0 12px rgba(139, 92, 246, 0.08);
+        }
+        .node[data-status="future"] .node-abbrev-badge {
+            color: var(--future);
+            background: rgba(139, 92, 246, 0.04);
+            border-color: rgba(139, 92, 246, 0.15);
+        }
+        .node[data-status="future"] .node-name { color: var(--future); opacity: 0.8; }
+
+        @keyframes borderPulse {
+            0%, 100% { border-color: var(--progress); }
+            50% { border-color: rgba(245, 158, 11, 0.3); }
+        }
+
+        .node.status-changed .node-capsule {
+            animation: statusFlash 0.3s ease-in-out 3;
+        }
+        @keyframes statusFlash {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Right Panel */
+        .panel {
+            position: fixed;
+            top: 0;
+            right: -440px;
+            width: 420px;
+            height: 100vh;
+            background: var(--bg-panel);
+            backdrop-filter: blur(24px);
+            border-left: 1px solid var(--glass-border);
+            z-index: 100;
+            transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
+            padding: 0;
+        }
+        .panel.open { right: 0; }
+
+        .panel-header {
+            padding: 28px 28px 20px;
+            border-bottom: 1px solid var(--glass-border);
+            position: relative;
+        }
+        .panel-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: 1px solid var(--glass-border);
+            color: var(--text-dim);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .panel-close:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+
+        .panel-abbrev {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--indigo);
+            margin-bottom: 10px;
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.08);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(99, 102, 241, 0.15);
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--text);
+        }
+        .panel-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .panel-body { padding: 20px 28px 40px; }
+        .panel-section { margin-bottom: 24px; }
+        .panel-section h3 {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+        .panel-section p {
+            font-size: 12.5px;
+            line-height: 1.7;
+            color: var(--text-dim);
+        }
+        .panel-files {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .panel-file {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--indigo);
+            padding: 6px 10px;
+            background: rgba(99, 102, 241, 0.04);
+            border-radius: 6px;
+            border: 1px solid rgba(99, 102, 241, 0.08);
+        }
+
+        .panel-deps {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .panel-dep {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--glass-border);
+            color: var(--text-dim);
+        }
+
+        /* Footer Info */
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            right: 28px;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            z-index: 30;
+            pointer-events: none;
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 90;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .overlay.active { opacity: 1; pointer-events: all; }
+    </style>
+</head>
+<body>
+    <canvas id="particles"></canvas>
+
+    <div class="header">
+        <h1>Project Neural Architecture</h1>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <!-- Left Panel - Permanent Overview Checklist & Note at top -->
+    <div class="left-panel">
+        <div class="left-panel-header">
+            <h2 class="left-panel-title">Modules Architecture</h2>
+        </div>
+        <div class="left-panel-header-note">
+            <h3>Project Adaptability Note</h3>
+            <p>This architecture is designed for adaptability. Based on performance metrics and hardware availability, software pipelines, underlying VLMs (e.g. swapping Qwen2-VL for LLaVA-Med), training methods (QLoRA vs Full-parameter), or diagnostic use cases may be updated, optimized, or swapped with alternative medical AI frameworks to maximize clinical accuracy.</p>
+        </div>
+        <div class="left-panel-list" id="leftPanelList"></div>
+    </div>
+
+    <!-- Network Canvas Area (Scrolling) -->
+    <div class="network" id="network">
+        <svg id="connections">
+            <defs>
+                <marker id="arrow-complete" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#00ffc8" />
+                </marker>
+                <marker id="arrow-progress" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f59e0b" />
+                </marker>
+                <marker id="arrow-pending" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b" />
+                </marker>
+                <marker id="arrow-future" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#8b5cf6" />
+                </marker>
+            </defs>
+        </svg>
+        <div class="scope-divider"><span>Future Research Scope</span></div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Details Sidebar -->
+    <div class="panel" id="panel">
+        <div class="panel-header">
+            <button class="panel-close" id="panelClose">&times;</button>
+            <div class="panel-abbrev" id="panelAbbrev"></div>
+            <h2 class="panel-title" id="panelTitle"></h2>
+            <div id="panelBadge"></div>
+        </div>
+        <div class="panel-body">
+            <div class="panel-section">
+                <h3>Description</h3>
+                <p id="panelDesc"></p>
+            </div>
+            <div class="panel-section">
+                <h3>Purpose</h3>
+                <p id="panelPurpose"></p>
+            </div>
+            <div class="panel-section">
+                <h3>Associated Files</h3>
+                <div class="panel-files" id="panelFiles"></div>
+            </div>
+            <div class="panel-section">
+                <h3>Dependencies</h3>
+                <div class="panel-deps" id="panelDeps"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer" id="footer">Last scan: --</div>
+
+    <script>
+    /* ========== NODE DEFINITIONS IN HIERARCHICAL VERTICAL LAYERS ========== */
+    const NODES = [
+        // Layer 1: Y = 180px
+        {
+            id: 'dataset', label: 'FracAtlas Dataset', abbrev: 'DS', x: 25, y: 180, layer: 'Data Ingestion',
+            description: '4,083 musculoskeletal X-ray images (717 fractured, 3,366 normal) with annotations in COCO, YOLO, VGG, and Pascal VOC formats.',
+            purpose: 'Ground-truth training data source. Contains body region labels, fracture counts, scan views, and hardware indicators for each image.',
+            files: ['data/raw/FracAtlas/FracAtlas/dataset.csv', 'data/raw/FracAtlas/FracAtlas/images/'],
+            deps: [],
+            connects: ['data_prep']
+        },
+
+        // Layer 2: Y = 400px
+        {
+            id: 'data_prep', label: 'Data Prep Pipeline', abbrev: 'DP', x: 25, y: 400, layer: 'Preprocessing',
+            description: 'Python script that parses dataset.csv metadata and converts it into LLaVA-compatible conversational JSON instruction format for VLM training.',
+            purpose: 'Bridges the gap between raw tabular image data and the chat-based instruction format required by multimodal LLMs like Qwen2-VL.',
+            files: ['src/dataset_to_vlm.py', 'data/processed/train.json'],
+            deps: ['FracAtlas Dataset'],
+            connects: ['training']
+        },
+        {
+            id: 'pretrained', label: 'Pre-trained VLM', abbrev: 'PV', x: 75, y: 400, layer: 'Model Baseline',
+            description: 'Qwen2-VL-7B-Instruct or LLaVA-1.5-7B — large vision-language models pre-trained on billions of image-text pairs from the internet.',
+            purpose: 'Provides foundational visual understanding (shapes, textures, structures) that is then specialized for medical X-ray analysis through fine-tuning.',
+            files: ['Downloaded from HuggingFace during training'],
+            deps: [],
+            connects: ['training']
+        },
+
+        // Layer 3: Y = 620px
+        {
+            id: 'training', label: 'VLM Fine-Tuning', abbrev: 'FT', x: 50, y: 620, layer: 'Model Training',
+            description: 'QLoRA 4-bit quantized training using Unsloth on Google Colab (T4 GPU). Only lightweight adapter weights are trained while the massive base model stays frozen.',
+            purpose: 'Teaches the pre-trained VLM to understand bone structures, detect fractures, identify hardware, and generate structured medical diagnostic text.',
+            files: ['notebooks/train_vlm.ipynb', 'models/adapter_config.json'],
+            deps: ['Data Prep Pipeline', 'Pre-trained VLM'],
+            connects: ['core']
+        },
+
+        // Layer 4: Y = 840px
+        {
+            id: 'core', label: 'Diagnostic Core', abbrev: 'DC', x: 50, y: 840, layer: 'Inference Core',
+            description: 'The central inference engine that loads the fine-tuned adapter weights, processes new X-ray images, and generates medical diagnoses.',
+            purpose: 'Central hub that routes X-ray inputs to the appropriate output module — conversational VQA chat, structured report generation, or evaluation.',
+            files: ['src/inference.py'],
+            deps: ['VLM Fine-Tuning'],
+            connects: ['vqa', 'reports']
+        },
+
+        // Layer 5: Y = 1060px
+        {
+            id: 'vqa', label: 'Med-VQA Chat', abbrev: 'VC', x: 25, y: 1060, layer: 'System Outputs',
+            description: 'Interactive conversational interface where users upload an X-ray and ask questions like "Where is the fracture?" or "Is there hardware present?"',
+            purpose: 'Makes the AI accessible to non-technical users by enabling natural language interaction with medical images, like chatting with a radiologist.',
+            files: ['src/app.py'],
+            deps: ['Diagnostic Core'],
+            connects: ['webui']
+        },
+        {
+            id: 'reports', label: 'Report Generator', abbrev: 'RG', x: 75, y: 1060, layer: 'System Outputs',
+            description: 'Automated system that formats VLM diagnostic outputs into structured, downloadable PDF medical reports with Findings and Impressions sections.',
+            purpose: 'Produces professional-grade documentation suitable for clinical records, academic submission, or patient communication.',
+            files: ['src/report_generator.py'],
+            deps: ['Diagnostic Core'],
+            connects: ['webui']
+        },
+
+        // Layer 6: Y = 1280px
+        {
+            id: 'webui', label: 'Web Dashboard', abbrev: 'WD', x: 50, y: 1280, layer: 'Interface Layer',
+            description: 'Gradio or Streamlit-based web interface hosting the entire diagnostic system — drag-and-drop X-ray upload, live chat panel, and report download.',
+            purpose: 'The user-facing frontend that makes the entire AI pipeline accessible through any web browser without coding knowledge.',
+            files: ['src/app.py'],
+            deps: ['Med-VQA Chat', 'Report Generator'],
+            connects: []
+        },
+
+        // --- FUTURE RESEARCH SCOPE (Y >= 1580px) ---
+        {
+            id: 'literature', label: 'Clinical Literature', abbrev: 'CL', x: 25, y: 1580, layer: 'Data Ingestion',
+            description: 'Medical textbooks, journal articles, and case studies describing rare bone conditions like Osteogenesis Imperfecta, Paget\'s Disease, and Osteosarcoma.',
+            purpose: 'Provides the medical knowledge base from which the LLM agent synthesizes accurate clinical profiles for rare conditions.',
+            files: ['Future: curated medical text corpus'],
+            deps: [],
+            connects: ['synth_reports']
+        },
+        {
+            id: 'synth_reports', label: 'Synthetic Report Gen', abbrev: 'SR', x: 50, y: 1580, layer: 'Preprocessing',
+            description: 'An LLM agent that generates detailed clinical case profiles (patient history, symptoms, imaging findings) for rare bone diseases.',
+            purpose: 'Creates textual descriptions that guide the Medical Diffusion model to generate anatomically accurate synthetic X-rays of rare conditions.',
+            files: ['Future: src/rare_condition_generator.py'],
+            deps: ['Clinical Literature'],
+            connects: ['diffusion', 'sandbox']
+        },
+        {
+            id: 'diffusion', label: 'Medical Diffusion', abbrev: 'MD', x: 75, y: 1580, layer: 'Model Baseline',
+            description: 'A Latent Diffusion model (Stable Diffusion variant) fine-tuned on medical imaging data to generate synthetic X-rays from textual pathology descriptions.',
+            purpose: 'Produces high-fidelity synthetic training data for rare conditions that lack sufficient real-world examples, validated via FID scores.',
+            files: ['Future: src/med_diffusion.py'],
+            deps: ['Synthetic Report Gen'],
+            connects: ['data_prep', 'sandbox']
+        },
+        {
+            id: 'sandbox', label: 'Rare Condition Sandbox', abbrev: 'SB', x: 50, y: 1800, layer: 'System Outputs',
+            description: 'Interactive simulator displaying synthetic rare disease cases side-by-side with the VLM\'s diagnostic prediction for validation and research.',
+            purpose: 'Allows researchers to evaluate model reliability on unseen conditions and export synthetic research case study reports as PDFs.',
+            files: ['Future: src/rare_condition_sandbox.py'],
+            deps: ['Diagnostic Core', 'Synthetic Report Gen', 'Medical Diffusion'],
+            connects: []
+        }
+    ];
+
+    const EXTRA_CONNECTIONS = [
+        { from: 'core', to: 'diffusion' },
+        { from: 'core', to: 'sandbox' }
+    ];
+
+    const STATUS_LABELS = {
+        complete: 'Complete',
+        in_progress: 'In Progress',
+        pending: 'Pending',
+        future: 'Future Scope'
+    };
+
+    let currentStatus = {};
+
+    /* ========== RENDER NODES ========== */
+    function renderNodes() {
+        const network = document.getElementById('network');
+        NODES.forEach((node, i) => {
+            const el = document.createElement('div');
+            el.className = 'node';
+            el.id = 'node-' + node.id;
+            el.dataset.status = 'pending';
+            el.style.left = node.x + '%';
+            el.style.top = node.y + 'px';
+
+            const capsule = document.createElement('div');
+            capsule.className = 'node-capsule';
+
+            const badge = document.createElement('div');
+            badge.className = 'node-abbrev-badge';
+            badge.textContent = node.abbrev;
+
+            const text = document.createElement('div');
+            text.className = 'node-text';
+
+            const name = document.createElement('span');
+            name.className = 'node-name';
+            name.textContent = node.label;
+
+            const meta = document.createElement('span');
+            meta.className = 'node-meta';
+            meta.textContent = node.layer;
+
+            text.appendChild(name);
+            text.appendChild(meta);
+
+            capsule.appendChild(badge);
+            capsule.appendChild(text);
+            el.appendChild(capsule);
+            network.appendChild(el);
+
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openPanel(node.id);
+            });
+        });
+    }
+
+    /* ========== RENDER LEFT PANEL CHECKLIST ========== */
+    function renderLeftPanelList() {
+        const container = document.getElementById('leftPanelList');
+        container.innerHTML = '';
+        NODES.forEach(node => {
+            const item = document.createElement('div');
+            item.className = 'left-panel-item';
+            item.id = 'list-item-' + node.id;
+
+            const header = document.createElement('div');
+            header.className = 'left-panel-item-header';
+
+            const name = document.createElement('span');
+            name.className = 'left-panel-item-name';
+            name.textContent = node.label;
+
+            const badge = document.createElement('span');
+            badge.className = 'left-panel-item-status';
+            badge.id = 'list-badge-' + node.id;
+
+            header.appendChild(name);
+            header.appendChild(badge);
+
+            const purpose = document.createElement('p');
+            purpose.className = 'left-panel-item-purpose';
+            purpose.textContent = node.purpose;
+
+            item.appendChild(header);
+            item.appendChild(purpose);
+            container.appendChild(item);
+
+            item.addEventListener('click', () => {
+                openPanel(node.id);
+            });
+        });
+    }
+
+    /* ========== DRAW CONNECTIONS ========== */
+    function drawConnections() {
+        const svg = document.getElementById('connections');
+        const rect = svg.getBoundingClientRect();
+        svg.innerHTML = '';
+
+        function getCenter(id) {
+            const el = document.getElementById('node-' + id);
+            if (!el) return null;
+            const r = el.getBoundingClientRect();
+            const svgRect = svg.getBoundingClientRect();
+            return {
+                x: r.left + r.width / 2 - svgRect.left,
+                y: r.top + r.height / 2 - svgRect.top
+            };
+        }
+
+        function drawLine(fromId, toId) {
+            const a = getCenter(fromId);
+            const b = getCenter(toId);
+            if (!a || !b) return;
+
+            // Calculate direction vector from A to B
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            // Target capsule dimensions: offset end point by 34px to stop at node border
+            const offsetX = (dx / dist) * 34;
+            const offsetY = (dy / dist) * 34;
+
+            const targetX = b.x - offsetX;
+            const targetY = b.y - offsetY;
+
+            // Draw clean vertical-flow cubic bezier path to targetX, targetY
+            const cx1 = a.x;
+            const cy1 = a.y + (targetY - a.y) * 0.4;
+            const cx2 = targetX;
+            const cy2 = a.y + (targetY - a.y) * 0.6;
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', `M${a.x},${a.y} C${cx1},${cy1} ${cx2},${cy2} ${targetX},${targetY}`);
+            path.classList.add('conn');
+
+            const sEl = document.getElementById('node-' + fromId);
+            const tEl = document.getElementById('node-' + toId);
+            const sStatus = sEl?.dataset.status;
+            const tStatus = tEl?.dataset.status;
+
+            let markerId = "arrow-pending";
+
+            if (sStatus === 'complete' && (tStatus === 'complete' || tStatus === 'in_progress')) {
+                path.classList.add('conn-active');
+                markerId = "arrow-complete";
+            } else if (sStatus === 'in_progress' || tStatus === 'in_progress') {
+                markerId = "arrow-progress";
+            } else if (sStatus === 'future' || tStatus === 'future') {
+                path.classList.add('conn-future');
+                markerId = "arrow-future";
+            }
+
+            path.setAttribute('marker-end', `url(#${markerId})`);
+            svg.appendChild(path);
+        }
+
+        NODES.forEach(node => {
+            (node.connects || []).forEach(targetId => drawLine(node.id, targetId));
+        });
+        EXTRA_CONNECTIONS.forEach(c => drawLine(c.from, c.to));
+    }
+
+    /* ========== STATUS POLLING ========== */
+    function fetchStatus() {
+        fetch('status.json?t=' + Date.now())
+            .then(r => r.json())
+            .then(data => {
+                currentStatus = data.modules || {};
+                applyStatus(currentStatus);
+                document.getElementById('footer').textContent = 'Last scan: ' + (data.last_updated || '--');
+            })
+            .catch(() => {
+                applyStatus({ dataset: 'complete', pretrained: 'complete' });
+            });
+    }
+
+    function applyStatus(statuses) {
+        NODES.forEach(node => {
+            const el = document.getElementById('node-' + node.id);
+            if (!el) return;
+            const newStatus = statuses[node.id] || (node.id === 'pretrained' ? 'complete' : 'pending');
+            const old = el.dataset.status;
+            if (old !== newStatus) {
+                el.dataset.status = newStatus;
+                el.classList.add('status-changed');
+                setTimeout(() => el.classList.remove('status-changed'), 1500);
+            }
+
+            // Apply to Left Panel list items
+            const badge = document.getElementById('list-badge-' + node.id);
+            if (badge) {
+                badge.textContent = STATUS_LABELS[newStatus];
+                badge.className = 'left-panel-item-status status-badge-' + newStatus;
+            }
+        });
+        updateStats(statuses);
+        drawConnections();
+    }
+
+    function updateStats(statuses) {
+        const counts = { complete: 0, in_progress: 0, pending: 0, future: 0 };
+        Object.values(statuses).forEach(s => { if (counts[s] !== undefined) counts[s]++; });
+        document.getElementById('stats').innerHTML =
+            `<div class="stat"><span class="dot dot-complete"></span><span class="count">${counts.complete}</span> Complete</div>` +
+            `<div class="stat"><span class="dot dot-progress"></span><span class="count">${counts.in_progress}</span> In Progress</div>` +
+            `<div class="stat"><span class="dot dot-pending"></span><span class="count">${counts.pending}</span> Pending</div>` +
+            `<div class="stat"><span class="dot dot-future"></span><span class="count">${counts.future}</span> Future</div>`;
+    }
+
+    /* ========== PANEL ========== */
+    function openPanel(nodeId) {
+        const node = NODES.find(n => n.id === nodeId);
+        if (!node) return;
+
+        const status = document.getElementById('node-' + nodeId)?.dataset.status || 'pending';
+
+        document.getElementById('panelAbbrev').textContent = node.abbrev;
+        document.getElementById('panelTitle').textContent = node.label;
+        document.getElementById('panelBadge').innerHTML =
+            `<span class="panel-badge badge-${status}">${STATUS_LABELS[status]}</span>`;
+        document.getElementById('panelDesc').textContent = node.description;
+        document.getElementById('panelPurpose').textContent = node.purpose;
+
+        const filesEl = document.getElementById('panelFiles');
+        filesEl.innerHTML = '';
+        (node.files || []).forEach(f => {
+            const div = document.createElement('div');
+            div.className = 'panel-file';
+            div.textContent = f;
+            filesEl.appendChild(div);
+        });
+
+        const depsEl = document.getElementById('panelDeps');
+        depsEl.innerHTML = '';
+        if (node.deps && node.deps.length > 0) {
+            node.deps.forEach(d => {
+                const span = document.createElement('span');
+                span.className = 'panel-dep';
+                span.textContent = d;
+                depsEl.appendChild(span);
+            });
+        } else {
+            depsEl.innerHTML = '<span class="panel-dep" style="opacity:0.5;">None (Input Node)</span>';
+        }
+
+        document.getElementById('panel').classList.add('open');
+        document.getElementById('overlay').classList.add('active');
+    }
+
+    function closePanel() {
+        document.getElementById('panel').classList.remove('open');
+        document.getElementById('overlay').classList.remove('active');
+    }
+
+    document.getElementById('panelClose').addEventListener('click', closePanel);
+    document.getElementById('overlay').addEventListener('click', closePanel);
+
+    /* ========== PARTICLES ========== */
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function initParticles() {
+        canvas.width = window.innerWidth;
+        canvas.height = Math.max(window.innerHeight, 2200);
+        particles = Array.from({ length: 45 }, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            r: Math.random() * 1.2 + 0.4,
+            dx: (Math.random() - 0.5) * 0.15,
+            dy: (Math.random() - 0.5) * 0.15,
+            o: Math.random() * 0.15 + 0.05
+        }));
+    }
+
+    function drawParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0, 255, 200, ${p.o})`;
+            ctx.fill();
+            p.x += p.dx;
+            p.y += p.dy;
+            if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+            if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+        });
+        requestAnimationFrame(drawParticles);
+    }
+
+    /* ========== INIT ========== */
+    renderNodes();
+    renderLeftPanelList();
+    initParticles();
+    drawParticles();
+    fetchStatus();
+
+    setInterval(fetchStatus, 5000);
+
+    // Dynamic connection redraw on resize & scroll
+    window.addEventListener('resize', () => {
+        initParticles();
+        drawConnections();
+    });
+    window.addEventListener('scroll', drawConnections);
+
+    setTimeout(drawConnections, 100);
+    </script>
+</body>
+</html>

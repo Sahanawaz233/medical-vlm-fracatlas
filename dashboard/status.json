@@ -1,0 +1,17 @@
+{
+  "last_updated": "2026-08-25T01:22:32",
+  "modules": {
+    "dataset": "pending",
+    "data_prep": "pending",
+    "pretrained": "complete",
+    "training": "pending",
+    "core": "pending",
+    "vqa": "pending",
+    "reports": "pending",
+    "webui": "pending",
+    "literature": "future",
+    "synth_reports": "future",
+    "diffusion": "future",
+    "sandbox": "future"
+  }
+}
