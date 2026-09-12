@@ -74,3 +74,5 @@ dashboard/status.json
 reports/*
 !reports/.gitkeep
 data/temp_uploads/
+evaluation_results/*
+!evaluation_results/.gitkeep
