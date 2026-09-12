@@ -567,19 +567,28 @@
     <canvas id="particles"></canvas>
 
     <div class="header">
-        <h1>Project Neural Architecture</h1>
+        <div style="display: flex; align-items: center; gap: 24px;">
+            <h1>Project Neural Architecture</h1>
+            <div style="display: flex; gap: 6px; background: rgba(15, 23, 42, 0.6); padding: 3px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                <a href="/index.html" style="padding: 5px 14px; font-size: 11px; font-weight: 700; color: #030308; background: var(--accent); border-radius: 6px; text-decoration: none; box-shadow: 0 0 10px rgba(0,255,200,0.2);">🧠 Architecture</a>
+                <a href="/docs.html" style="padding: 5px 14px; font-size: 11px; font-weight: 600; color: var(--text-dim); text-decoration: none; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.color='#fff'; this.style.background='rgba(255,255,255,0.05)';" onmouseout="this.style.color='var(--text-dim)'; this.style.background='transparent';">📄 Live Docs & Dashboard</a>
+            </div>
+        </div>
     </div>
 
     <div class="stats" id="stats"></div>
 
     <!-- Left Panel - Permanent Overview Checklist & Note at top -->
     <div class="left-panel">
-        <div class="left-panel-header">
+        <div class="left-panel-header" style="display: flex; justify-content: space-between; align-items: center;">
             <h2 class="left-panel-title">Modules Architecture</h2>
+            <a href="/docs.html" style="font-size: 10px; color: var(--accent); text-decoration: none; font-weight: 600;">Full Docs &rarr;</a>
         </div>
         <div class="left-panel-header-note">
-            <h3>Project Adaptability Note</h3>
-            <p>This architecture is designed for adaptability. Based on performance metrics and hardware availability, software pipelines, underlying VLMs (e.g. swapping Qwen2-VL for LLaVA-Med), training methods (QLoRA vs Full-parameter), or diagnostic use cases may be updated, optimized, or swapped with alternative medical AI frameworks to maximize clinical accuracy.</p>
+            <h3>Hardware & Execution Strategy</h3>
+            <p><strong>Local 6GB GPU (RTX 3050 / Dell G15):</strong> Uses <code>Qwen2-VL-2B-Instruct</code> with 4-bit QLoRA (~3.8 GB VRAM). Enables 100% on-device training, inference, and WebUI without cloud dependency.</p>
+            <p style="margin-top: 6px;"><strong>Cloud Tier (Colab T4 16GB):</strong> Supports <code>Qwen2-VL-7B</code> for comparative benchmarking. The entire pipeline adapts seamlessly between both engines.</p>
+            <p style="margin-top: 8px;"><a href="/docs.html" style="display: inline-block; font-size: 10.5px; color: var(--accent); text-decoration: none; font-weight: 700; background: rgba(0,255,200,0.08); padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(0,255,200,0.2);">Open Separate Live Docs & Dashboard &rarr;</a></p>
         </div>
         <div class="left-panel-list" id="leftPanelList"></div>
     </div>
@@ -653,17 +662,17 @@
         // Layer 2: Y = 400px
         {
             id: 'data_prep', label: 'Data Prep Pipeline', abbrev: 'DP', x: 25, y: 400, layer: 'Preprocessing',
-            description: 'Python script that parses dataset.csv metadata and converts it into LLaVA-compatible conversational JSON instruction format for VLM training.',
-            purpose: 'Bridges the gap between raw tabular image data and the chat-based instruction format required by multimodal LLMs like Qwen2-VL.',
-            files: ['src/dataset_to_vlm.py', 'data/processed/train.json'],
+            description: 'Converts FracAtlas radiographs (Fractured & Normal) and COCO bounding annotations into standard LLaVA / ShareGPT multi-turn conversational JSON format.',
+            purpose: 'Bridges raw radiographic imagery with VLM chat format, structuring multi-turn clinical QA (<image> + clinical queries -> findings and impression).',
+            files: ['src/dataset_to_vlm.py', 'data/processed/train.json', 'data/processed/val.json'],
             deps: ['FracAtlas Dataset'],
             connects: ['training']
         },
         {
             id: 'pretrained', label: 'Pre-trained VLM', abbrev: 'PV', x: 75, y: 400, layer: 'Model Baseline',
-            description: 'Qwen2-VL-7B-Instruct or LLaVA-1.5-7B — large vision-language models pre-trained on billions of image-text pairs from the internet.',
-            purpose: 'Provides foundational visual understanding (shapes, textures, structures) that is then specialized for medical X-ray analysis through fine-tuning.',
-            files: ['Downloaded from HuggingFace during training'],
+            description: 'Dual-Engine Baseline: Qwen2-VL-2B-Instruct (Default for local 6GB RTX 3050 GPUs) and Qwen2-VL-7B-Instruct / LLaVA-1.5-7B (for 16GB+ Cloud GPUs).',
+            purpose: 'Provides multimodal visual reasoning on radiographs. 2B runs 100% locally on laptops; 7B provides cloud-based large-scale benchmark comparison.',
+            files: ['Downloaded from Hugging Face (Qwen2-VL-2B / 7B)'],
             deps: [],
             connects: ['training']
         },
@@ -671,9 +680,9 @@
         // Layer 3: Y = 620px
         {
             id: 'training', label: 'VLM Fine-Tuning', abbrev: 'FT', x: 50, y: 620, layer: 'Model Training',
-            description: 'QLoRA 4-bit quantized training using Unsloth on Google Colab (T4 GPU). Only lightweight adapter weights are trained while the massive base model stays frozen.',
-            purpose: 'Teaches the pre-trained VLM to understand bone structures, detect fractures, identify hardware, and generate structured medical diagnostic text.',
-            files: ['notebooks/train_vlm.ipynb', 'models/adapter_config.json'],
+            description: 'QLoRA 4-bit PEFT fine-tuning. On local 6GB RTX 3050 laptops, trains Qwen2-VL-2B locally (~3.8 GB VRAM). Alternatively runs Qwen2-VL-7B on free Google Colab (16GB T4 GPU).',
+            purpose: 'Specializes the VLM for orthopedic radiographs to detect cortical fractures, identify hardware, and generate structured diagnostic findings.',
+            files: ['notebooks/train_vlm.ipynb', 'src/train_vlm.py', 'models/adapter_config.json'],
             deps: ['Data Prep Pipeline', 'Pre-trained VLM'],
             connects: ['core']
         },

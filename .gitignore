@@ -69,3 +69,8 @@ models/*
 # Dashboard dynamic logs/temporary status scans
 dashboard/*.log
 dashboard/status.json
+
+# Generated reports & temporary uploads
+reports/*
+!reports/.gitkeep
+data/temp_uploads/

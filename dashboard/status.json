@@ -1,17 +1,25 @@
 {
-  "last_updated": "2026-08-25T01:22:32",
+  "last_updated": "2026-09-13T00:11:59",
   "modules": {
-    "dataset": "pending",
-    "data_prep": "pending",
+    "dataset": "complete",
+    "data_prep": "complete",
     "pretrained": "complete",
-    "training": "pending",
-    "core": "pending",
-    "vqa": "pending",
-    "reports": "pending",
-    "webui": "pending",
+    "training": "in_progress",
+    "core": "complete",
+    "vqa": "complete",
+    "reports": "complete",
+    "webui": "complete",
     "literature": "future",
     "synth_reports": "future",
     "diffusion": "future",
     "sandbox": "future"
+  },
+  "metrics": {
+    "raw_images": 4083,
+    "train_samples": 1148,
+    "val_samples": 164,
+    "test_samples": 126,
+    "total_conversations": 1438,
+    "reports_generated": 1
   }
 }

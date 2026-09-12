@@ -1,0 +1,30 @@
+# ==============================================================================
+# FracAtlas Medical Vision-Language Model (VLM) - Requirements
+# ==============================================================================
+
+# Core Data Processing & Utilities (Runs on CPU / Local Laptop)
+pillow>=10.2.0
+pandas>=2.1.0
+numpy>=1.24.0
+tqdm>=4.66.0
+
+# Deep Learning & Multi-Modal Foundation (PyTorch + CUDA recommended on Windows/Linux)
+# Note: For NVIDIA GPU on Windows, install torch first via:
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+torch>=2.2.0
+torchvision>=0.17.0
+transformers>=4.42.0
+accelerate>=0.30.0
+
+# Parameter-Efficient Fine-Tuning (PEFT) & 4-bit Quantization
+peft>=0.11.0
+bitsandbytes>=0.43.0
+
+# VLM Specific Utilities (Qwen2-VL)
+qwen-vl-utils>=0.0.8
+
+# Clinical Report Generation (PDF)
+reportlab>=4.1.0
+
+# Interactive Med-VQA Web UI
+gradio>=4.32.0
