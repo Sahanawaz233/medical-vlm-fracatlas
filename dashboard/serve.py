@@ -49,21 +49,37 @@ def scan_project_status():
     s["pretrained"] = "complete"
 
     # Training
-    if dir_has_model_files("models"):
+    has_weights = dir_has_model_files("models")
+    if has_weights:
         s["training"] = "complete"
     elif exists("notebooks/train_vlm.ipynb") or exists("src/train_vlm.py"):
         s["training"] = "in_progress"
     else:
         s["training"] = "pending"
 
-    # Diagnostic Core
-    s["core"] = "complete" if exists("src/inference.py") else "pending"
+    # Diagnostic Core (Requires trained model weights to be complete)
+    if has_weights and exists("src/inference.py"):
+        s["core"] = "complete"
+    elif exists("src/inference.py"):
+        s["core"] = "in_progress"  # Code scaffolded, awaiting fine-tuned weights
+    else:
+        s["core"] = "pending"
 
-    # VQA Chat
-    s["vqa"] = "complete" if exists("src/app.py") else "pending"
+    # VQA Chat (Requires trained model weights to be complete)
+    if has_weights and exists("src/app.py"):
+        s["vqa"] = "complete"
+    elif exists("src/app.py"):
+        s["vqa"] = "in_progress"  # UI ready, awaiting model weights
+    else:
+        s["vqa"] = "pending"
 
     # Report Generator
-    s["reports"] = "complete" if exists("src/report_generator.py") else "pending"
+    if has_weights and exists("src/report_generator.py"):
+        s["reports"] = "complete"
+    elif exists("src/report_generator.py"):
+        s["reports"] = "in_progress"  # Template generator ready, awaiting neural output
+    else:
+        s["reports"] = "pending"
 
     # Web Dashboard
     s["webui"] = s["vqa"]
