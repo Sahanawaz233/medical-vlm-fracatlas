@@ -1,249 +1,228 @@
-# 🦴 Project Review 1 Presentation: FracAtlas Medical Vision-Language Model
-**Multimodal AI for Musculoskeletal Fracture Detection, Med-VQA, and Automated Clinical Reporting**
+# 🦴 B.Tech 7th Semester Project: Review 1 Presentation
+**Department of Electronics and Telecommunication Engineering**
+**Assam Engineering College, Jalukbari**
+
+### Project Title:
+**FracAtlas Medical Vision-Language Model: Musculoskeletal Fracture Detection, Conversational Med-VQA, and Automated Clinical Reporting**
 
 ---
 
-## 📋 Direct Slide Deck Index (12 Architecture-Matched Slides)
-1. **Slide 1**: Title Slide & System Overview (Dual-Engine Framework)
-2. **Slide 2**: Clinical Need Analysis & Problem Motivation
-3. **Slide 3**: Literature Survey & Research Gaps (Comparative Architecture Matrix)
-4. **Slide 4**: High-Level Neural Architecture (The 6 Layers Breakdown)
-5. **Slide 5**: Layer 1 & 2 — Data Ingestion (DS) & Multimodal Preprocessing (DP)
-6. **Slide 6**: Layer 3 & 4 — Dual-Engine Baseline (PV) & QLoRA Fine-Tuning (FT)
-7. **Slide 7**: Technical Specifications & Resource Allocation Guide
-8. **Slide 8**: Layer 5 — Diagnostic Core Engine (DC)
-9. **Slide 9**: Layer 6 — System Outputs & Interfaces (VC, RG, WD)
-10. **Slide 10**: Clinical Benchmark Evaluation & Metrics (Harness Validation)
-11. **Slide 11**: Future Research Scope & Extensions (Literature, Diffusion, Sandbox)
-12. **Slide 12**: Implementation Roadmap, Team Roles & Review 1 Summary
+## 📋 Review 1 Slide Outline (12 Academic Slides)
+
+1. **Slide 1**: Title Slide (College, Department, Team, Guide, Project Title)
+2. **Slide 2**: Introduction & Background Overview
+3. **Slide 3**: Need Analysis & Clinical Motivation
+4. **Slide 4**: Problem Statement & Project Scope
+5. **Slide 5**: Literature Survey & Comparative Analysis
+6. **Slide 6**: Research Gaps & Proposed Approach
+7. **Slide 7**: Project Objectives & Key Deliverables
+8. **Slide 8**: Dataset Description & Demographics (FracAtlas)
+9. **Slide 9**: Work Done Till Review 1 (Completed Deliverables)
+10. **Slide 10**: Proposed Methodology & System Architecture
+11. **Slide 11**: System & Technical Specifications (Hardware & Software)
+12. **Slide 12**: Project Roadmap & Semester Plan (Phases 1, 2, 3)
 
 ---
 
-## Slide 1: Title Slide & System Overview
+## Slide 1: Title Slide
+* **Institution**: Assam Engineering College, Jalukbari
+* **Department**: Department of Electronics and Telecommunication Engineering
+* **Project Title**: FracAtlas Medical Vision-Language Model
+* **Subtitle**: Multimodal AI for Musculoskeletal Fracture Detection, Conversational Med-VQA, and Automated Reporting
+* **Stage**: B.Tech 7th Semester Major Project Work — Milestone Review 1 (2023 - 2027 Batch)
+* **Project Group Members**:
+  * Sahanawaz Hussain *(Roll No: ________)*
+  * Aryan *(Roll No: ________)*
+  * Pranita *(Roll No: ________)*
+* **Project Guide**: *[Guide / Supervisor Name]*
+* **Repository**: `github.com/Sahanawaz233/medical-vlm-fracatlas`
 
-### Visual Layout & Elements
-* **Main Title**: FracAtlas Medical Vision-Language Model (VLM)
-* **Subtitle**: Multimodal Deep Learning for Orthopedic Fracture Detection, Conversational Med-VQA, and Automated Clinical Reporting
-* **Institution**: Assam Engineering College • Department of Electronics & Telecommunication Engineering
-* **Project Team**:
-  * **Sahanawaz Hussain** (Lead — Architecture, Training & Inference Core)
-  * **Aryan** (Member — Data Ingestion & Benchmark Harness)
-  * **Pranita** (Member — Med-VQA WebUI & Clinical PDF Engine)
-* **Architecture Highlights**:
-  * Dual-Engine Strategy: Local `Qwen2-VL-2B` (6GB VRAM) + Cloud `7B`
-  * PEFT: 4-bit NormalFloat (NF4) via BitsAndBytes + LoRA Adapters
-  * Deliverables: Fracture Grounding + Conversational VQA + Verified ACR Reports
-* **Code Repository**: [`github.com/Sahanawaz233/medical-vlm-fracatlas`](https://github.com/Sahanawaz233/medical-vlm-fracatlas)
-
-> **Presenter Script**:
-> *"Respected guide and panel members, we present Review 1 of our major project: 'FracAtlas Medical Vision-Language Model'. Our work bridges computer vision with clinical reasoning by developing a multimodal Vision-Language pipeline that detects fractures, engages in natural clinical dialogue, and automatically authors verified radiology reports."*
+> **Speaking Script**:
+> *"Respected guide and honorable panel members, good morning. We are presenting Review 1 of our B.Tech major project: 'FracAtlas Medical Vision-Language Model'. Our project focuses on developing an assistive multimodal AI system that performs fracture detection, clinical visual question answering, and automated radiology report generation. In this presentation, we will cover our Need Analysis, Literature Survey, Dataset Preprocessing, Work Done till Review 1, and our proposed execution Roadmap."*
 
 ---
 
-## Slide 2: Clinical Need Analysis & Problem Motivation
+## Slide 2: Introduction & Background Overview
+* **Role of Musculoskeletal Radiography (X-Ray)**:
+  * First-line diagnostic imaging modality for trauma emergencies and bone injuries.
+  * Massive daily imaging volumes cause severe fatigue and diagnostic backlogs for radiologists.
+* **Evolution of Computer-Aided Diagnosis (CAD)**:
+  * *1st Generation*: Handcrafted image features & classical machine learning.
+  * *2nd Generation*: Deep CNNs (ResNet, YOLO) outputting bounding boxes without textual explanation.
+  * *3rd Generation (Current)*: Multimodal Vision-Language Models (VLMs) that unite visual understanding with natural clinical language.
+* **What is a Medical Vision-Language Model?**:
+  * An AI model combining a Vision Transformer (to process X-ray pixels) and a Large Language Model (to understand and generate clinical text).
+  * Enables physicians to converse directly with scans and receive structured diagnostic impressions.
 
-### Visual Layout & Elements
-* **Card 1: 🚨 Emergency Triage Bottleneck**:
-  * Radiologist shortages during off-peak hours and night trauma shifts.
-  * Initial radiographs evaluated by junior emergency doctors under intense time pressure.
-* **Card 2: ⚠️ Up to 80% Missed Fractures**:
-  * Clinical audits prove missed fractures account for ~80% of emergency diagnostic discrepancies.
-  * Subtle hairline, non-displaced, and pediatric fractures are routinely overlooked, causing bone malunion and chronic morbidity.
-* **Card 3: 📦 Limits of Conventional CAD**:
-  * Traditional CNNs (ResNet, YOLO) output only raw bounding boxes or binary flags.
-  * Mute models: zero explanation, no conversational inquiry, no report generation.
-* **Card 4: 💡 The Multimodal Solution**:
-  * Point-of-care VLM combining visual localization, Med-VQA reasoning, and tamper-evident ACR clinical PDF reports.
-
-> **Presenter Script**:
-> *"Emergency trauma rooms suffer from acute diagnostic delays. Studies show missed fractures constitute up to 80% of diagnostic emergency errors. Traditional CAD models simply output a box or heatmap without explaining their reasoning. Our multimodal system assists doctors directly with visual grounding, clinical dialogue, and automated documentation."*
+> **Speaking Script**:
+> *"Digital projection radiography is the first-line imaging modality used in hospital trauma departments. Over the years, AI in medical imaging has evolved from basic bounding box detectors into multimodal Vision-Language Models. By uniting visual perception with clinical language reasoning, a VLM allows clinicians to interact with X-ray images, ask questions, and receive structured diagnostic findings."*
 
 ---
 
-## Slide 3: Literature Survey & Research Gaps
+## Slide 3: Need Analysis & Clinical Motivation
+* **Emergency Department Triage Bottleneck**:
+  * Shortage of specialized musculoskeletal radiologists during night shifts and high-volume trauma hours.
+  * Initial radiographs are assessed by non-radiologist junior emergency physicians under acute time constraints.
+* **High Rate of Overlooked Fractures**:
+  * Clinical audits prove that **missed fractures constitute up to 80% of diagnostic emergency room errors**.
+  * Subtle hairline, non-displaced, and pediatric fractures are routinely overlooked, leading to malunion and chronic pain.
+* **Limitations of Existing CAD Tools**:
+  * Traditional CNNs only output a box or heatmap without explaining *why* an abnormality was flagged.
+  * Clinicians cannot ask follow-up questions (e.g. *"Is bone displacement present?"* or *"Are surgical screws observed?"*).
+  * Inability to draft standardized medical documentation for hospital patient records.
+* **Value Proposition**:
+  * A real-time (< 2 seconds) assistive second-reader providing instant fracture grounding, conversational reasoning, and signed reports.
 
-### Comparative Architecture Matrix
+> **Speaking Script**:
+> *"Our Need Analysis highlights a critical clinical problem: missed bone fractures account for up to 80% of emergency department diagnostic errors, particularly during night shifts when junior clinicians evaluate radiographs without immediate radiologist supervision. Conventional deep learning models only output static bounding boxes. There is an urgent need for an assistive multimodal model that explains its findings and drafts diagnostic documentation in real time."*
 
-| Study / Publication | Modality Evaluated | Key Strengths | Identified Research Gaps |
+---
+
+## Slide 4: Problem Statement & Project Scope
+* **Formal Problem Statement**:
+  > *"To design, implement, and evaluate a Multimodal Vision-Language Model tailored for musculoskeletal radiographs that performs acute fracture detection, interactive clinical Visual Question Answering (Med-VQA), and automated structured radiology report generation for emergency triage."*
+* **Project Scope & Inclusions**:
+  * Peripheral musculoskeletal extremity radiographs (hands, wrists, forearms, elbows, shoulders, knees, ankles, feet).
+  * Binary fracture presence detection and bounding coordinate localization.
+  * Natural language Med-VQA for bone integrity, cortical disruption, and hardware presence.
+  * Automated generation of ACR-standard clinical radiology reports (PDF format).
+  * Lightweight deployment capable of running on consumer workstation hardware.
+* **Project Boundaries**:
+  * Focus is strictly on 2D projection radiographs (CT/MRI volumetric scans are out of scope).
+  * Serves as an assistive decision-support tool for doctors, not an autonomous replacement.
+
+> **Speaking Script**:
+> *"Our problem statement defines our commitment to build an explainable, end-to-end clinical workflow. Our scope is focused on peripheral extremity radiographs, covering fracture localization, interactive Med-VQA, and automated report generation, designed specifically to operate as an assistive second-reader for emergency doctors."*
+
+---
+
+## Slide 5: Literature Survey & Comparative Analysis
+
+| Paper / Author | Modality Evaluated | Methodology & Strengths | Identified Gaps & Limitations |
 | :--- | :--- | :--- | :--- |
-| **Lindsey et al. (PNAS 2018)** | Musculoskeletal Radiographs | High sensitivity on wrist fractures via deep CNNs | Classification only; zero natural language reasoning, VQA, or reporting |
-| **Iftekhar et al. (Nature Sci Data 2023)** | FracAtlas X-Rays (4,083 scans) | Benchmarked multi-region bounding boxes (YOLOv8) | Vision-only detector; lacks contextual clinical dialogue and reports |
-| **LLaVA-Med (NeurIPS 2023)** | Chest / General Biomedical | Strong multimodal conversational instruction tuning | Focused heavily on chest X-rays; severe hallucination on subtle cortical fractures |
-| **Our Proposed VLM (FracAtlas VLM)** | **FracAtlas Musculoskeletal** | **Dual-Engine QLoRA + Med-VQA + Automated Reports** | **Bridges visual fracture detection with interactive clinical documentation** |
+| **Lindsey et al. (PNAS 2018)** | Musculoskeletal X-Rays (Wrist, Hand) | Deep ResNet-based CNN.<br>Achieved high sensitivity on wrist fractures. | Pure classification only.<br>Zero natural language reasoning, VQA dialogue, or reporting. |
+| **Iftekhar et al. (Nature Sci Data 2023)** | FracAtlas Dataset (4,083 X-rays) | Curated benchmark dataset.<br>Benchmarked YOLOv8 and Faster R-CNN. | Vision-only object detection.<br>Cannot answer clinical questions or draft radiology reports. |
+| **LLaVA-Med (NeurIPS 2023)** | Chest / General Biomedical (MIMIC-CXR) | Multimodal conversational VLM.<br>Instruction-tuned on biomedical QA pairs. | Heavily biased to chest X-rays.<br>Hallucinates on fine cortical bone fracture lines. |
+| **Our Proposed VLM (FracAtlas VLM)** | **FracAtlas Musculoskeletal (11 extremity sites)** | **Qwen2-VL-2B with 4-bit QLoRA.<br>Detection + Med-VQA + Automated PDF Reports.** | **Addresses orthopedic neglect by bridging detection, interactive dialogue, and clinical documentation.** |
 
-> **Presenter Script**:
-> *"Our literature survey revealed that 90% of medical VLMs focus exclusively on chest X-rays. Musculoskeletal trauma has been neglected. Existing fracture detectors are mute, while chest VLMs hallucinate on orthopedic cortical lines. Our model directly addresses this gap."*
-
----
-
-## Slide 4: High-Level Neural Architecture (The 6 Layers)
-
-### Visual Layout: End-to-End Neural Flowchart
-* **Layer 1: Data Ingestion (`dataset`)**: 4,083 FracAtlas radiographs (717 fractured, 3,366 normal) + multi-format annotations (COCO, YOLO, VOC) via `download_dataset.py`.
-* **Layer 2: Preprocessing (`data_prep`)**: `src/dataset_to_vlm.py` parses metadata and COCO masks, enforces 1:1 balanced negative control sampling, and formulates 1,438 LLaVA multi-turn dialogues.
-* **Layer 3: Model Baseline (`pretrained`)**: Dual-Engine Baseline — Tier 1: `Qwen2-VL-2B-Instruct` (Local 6GB VRAM) \| Tier 2: `Qwen2-VL-7B-Instruct` (Cloud Colab T4 16GB).
-* **Layer 4: Model Training (`training`)**: QLoRA 4-bit fine-tuning (`src/train_vlm.py` / `notebooks/train_vlm.ipynb`) using BitsAndBytes NF4 and LoRA adapters on attention projections.
-* **Layer 5: Diagnostic Core (`core`)**: `src/inference.py` executes cortical breach detection, coordinate localization, and Med-VQA routing (<1.8s latency).
-* **Layer 6: System Outputs (`vqa`, `reports`, `webui`)**: Med-VQA chat (`src/app.py`), ACR-standard PDF reports (`src/report_generator.py`), and real-time dashboard (`dashboard/serve.py` on `:8080`).
-
-> **Presenter Script**:
-> *"Slide 4 presents our 6-layer neural architecture directly from our system specification. It spans data ingestion and balanced preprocessing, our dual-engine baseline, QLoRA fine-tuning, the diagnostic core engine, and our user-facing clinical interfaces."*
+> **Speaking Script**:
+> *"Our literature survey examined seminal works in this domain. Traditional models like Lindsey et al. and the original FracAtlas YOLO benchmark are vision-only detectors—they lack any conversational capability. Conversely, recent medical VLMs like LLaVA-Med focus almost entirely on chest X-rays and hallucinate on subtle bone lines. Our work fills this gap by building a dedicated musculoskeletal VLM."*
 
 ---
 
-## Slide 5: Layer 1 & 2 — Data Ingestion & Preprocessing Pipeline
+## Slide 6: Research Gaps & Proposed Approach
+* **Gap 1: Orthopedic Extremity Neglect**:
+  * Over 90% of medical VLM literature focuses on chest radiography (MIMIC-CXR).
+  * Extremity fractures—the most common emergency room trauma—are completely neglected.
+* **Gap 2: The 'Mute Detector' Dilemma**:
+  * Existing fracture detection tools (YOLO, Faster R-CNN) only output raw coordinates or heatmaps.
+  * Clinicians cannot interrogate the model regarding fracture displacement, bone alignment, or hardware presence.
+* **Gap 3: Prohibitive Hardware Barriers**:
+  * 7B+ parameter VLMs require 24–40 GB enterprise GPUs, preventing adoption in local clinics.
+* **Our Proposed Approach**:
+  * Specializing a lightweight foundation model (`Qwen2-VL-2B-Instruct`) via **4-bit QLoRA** parameter-efficient fine-tuning, achieving full local execution within **6 GB VRAM** consumer hardware constraints.
 
-### Key Metrics & Preprocessing Flow
-* **4,083 Raw Radiographs**: High-resolution extremity scans (~352 MB) across 11 anatomical sites.
-* **1:1 Balanced Sampling**: Enforced strict 1:1 ratio between fractured cases and normal controls, eliminating majority-class prediction bias.
-* **1,438 Total Dialogue Pairs**:
-  * **Training Split**: **1,148 samples** (574 fractured / 574 normal)
-  * **Validation Split**: **164 samples** (82 fractured / 82 normal)
-  * **Test Split**: **126 samples** (63 fractured / 63 normal)
-* **Standardized LLaVA / ShareGPT Schema**:
-  ```json
-  [
-    {
-      "id": "frac_IMG0000019",
-      "image": "images/Fractured/IMG0000019.jpg",
-      "is_fractured": true,
-      "conversations": [
-        {"from": "human", "value": "<image>\nExamine this radiograph for fracture."},
-        {"from": "gpt", "value": "FINDINGS: Acute cortical disruption at [1242, 929, 1515, 1076]. Impression: Distal radius fracture."}
-      ]
-    }
-  ]
-  ```
-
-> **Presenter Script**:
-> *"In Layers 1 and 2, we solved the 82% normal skew by enforcing 1:1 balanced sampling. Our preprocessing script (`src/dataset_to_vlm.py`) generated 1,438 curated clinical conversation pairs formatted to the industry-standard LLaVA multimodal schema."*
+> **Speaking Script**:
+> *"We identified three main research gaps: orthopedic trauma has been ignored in medical VLM research, existing fracture detectors cannot converse with clinicians, and standard VLMs require enterprise GPUs. We solve this by fine-tuning Qwen2-VL-2B with 4-bit QLoRA, enabling full local deployment on consumer workstations."*
 
 ---
 
-## Slide 6: Layer 3 & 4 — Dual-Engine Strategy & QLoRA Fine-Tuning
+## Slide 7: Project Objectives & Key Deliverables
+* **Objective 1: Multimodal Instruction Dataset Preparation**:
+  * Formulate an automated pipeline converting FracAtlas X-rays and COCO annotations into 1,438 balanced LLaVA-format conversation pairs with a 1:1 negative control ratio.
+* **Objective 2: Parameter-Efficient VLM Fine-Tuning**:
+  * Fine-tune `Qwen2-VL-2B` on musculoskeletal trauma radiographs using QLoRA 4-bit (NF4) quantization, maintaining training peak memory below 4 GB VRAM.
+* **Objective 3: Conversational Med-VQA Assistant**:
+  * Implement an interactive multimodal chat interface allowing clinicians to query radiographs regarding fracture status, coordinates, and fixation hardware.
+* **Objective 4: Automated Clinical Report Generation**:
+  * Develop an automated report generator that transforms diagnostic findings into official, downloadable ACR-compliant radiology PDF reports.
 
-### Engine Tier Matrix & Fine-Tuning Methodology
-
-| Engine Tier | Foundation Model | Parameters | Quantized VRAM | Target Hardware & Role |
-| :--- | :--- | :---: | :---: | :--- |
-| **Tier 1: Local Workstation (Default)** | `Qwen2-VL-2B-Instruct` | 2.2 Billion | **~1.5 GB (NF4)**<br>Peak Train: **~3.8 GB** | Consumer 6GB GPUs (RTX 3050)<br>100% on-device & offline inference |
-| **Tier 2: Cloud Benchmark** | `Qwen2-VL-7B-Instruct` / `LLaVA-1.5` | 7.0 Billion | **~4.8 GB (NF4)**<br>Peak Train: **~8.5 GB** | Cloud GPUs (Google Colab T4 16GB)<br>Comparative research scaling |
-
-* **QLoRA 4-bit PEFT Details**:
-  * BitsAndBytes 4-bit NormalFloat (NF4) with double quantization.
-  * LoRA applied to attention projections (`q_proj`, `k_proj`, `v_proj`, `o_proj`) with rank $r=16, \alpha=32$.
-  * Gradient checkpointing enabled, eliminating visual token activation spikes.
-  * Lightweight adapter weights saved to `models/` (~100–250 MB).
-
-> **Presenter Script**:
-> *"Layers 3 and 4 embody our Dual-Engine strategy: Qwen2-VL-2B in 4-bit NF4 peaks at only 3.8 GB VRAM during training, allowing 100% on-device execution on everyday 6GB gaming laptops. For cloud benchmarks, Colab T4 trains the 7B tier."*
+> **Speaking Script**:
+> *"Our project has four clearly defined objectives: first, structuring a balanced multimodal dataset; second, fine-tuning the VLM with 4-bit QLoRA; third, developing the conversational Med-VQA chat; and fourth, automating the generation of signed clinical radiology PDF reports."*
 
 ---
 
-## Slide 7: Technical Specifications & Resource Allocation Guide
+## Slide 8: Dataset Description & Demographics (FracAtlas)
+* **Dataset Foundation**: Official peer-reviewed **FracAtlas** release (hosted on Figshare).
+* **Dataset Metrics**:
+  * **Total High-Resolution Radiographs**: **4,083 images** (~352 MB).
+  * **Fractured Cases**: **717 images** (17.56% positive trauma cases).
+  * **Normal Controls**: **3,366 images** (82.44% non-fractured cases).
+* **Anatomical Extremity Sites (11 Major Sites)**:
+  * Hand, Wrist, Forearm, Elbow, Humerus/Shoulder, Pelvis/Hip, Femur, Knee, Tibia/Fibula, Ankle, Foot.
+* **Multi-Format Ground Truth**:
+  * Expert-annotated bounding boxes and segmentation masks in COCO, YOLO, and Pascal VOC formats.
+* **The Class Imbalance Challenge**:
+  * In raw data, over 82% of scans are normal. Without balanced sampling, a model learns a trivial shortcut to predict 'normal' for all scans, yielding 0% clinical sensitivity.
 
-### Hardware Profiles & Software Environment
-* **Profile A: Local Consumer Laptop (Recommended Local Setup)**:
-  * Tested Machine: Dell G15 5530 (Intel Core i5-13450HX, 16 GB DDR5 RAM).
-  * GPU: NVIDIA GeForce RTX 3050 Laptop GPU (6 GB VRAM).
-  * Peak Training VRAM: **~3.8 GB / 6 GB** (zero OOM risk).
-  * Inference Latency: **< 1.8 seconds per radiograph** (< 2.5 GB VRAM).
-  * Data Privacy: 100% on-premise execution with zero patient data leakage.
-* **Profile B: Cloud GPU (Google Colab / Kaggle)**:
-  * Hardware: NVIDIA Tesla T4 (16 GB GDDR6 VRAM).
-  * Role: Benchmark scaling for `Qwen2-VL-7B-Instruct`.
-* **Software Stack**:
-  * PyTorch 2.2+, CUDA 12.1, HuggingFace Transformers, Accelerate.
-  * BitsAndBytes (NF4), PEFT (LoRA), Gradio 4.32+, ReportLab 4.1+.
-
-> **Presenter Script**:
-> *"Slide 7 details our technical resource allocation. By leveraging 4-bit quantization and gradient checkpointing, our local engine trains and infers comfortably under 3.8 GB VRAM on a consumer 6GB card, guaranteeing clinical data privacy without cloud reliance."*
+> **Speaking Script**:
+> *"We are using the FracAtlas dataset containing 4,083 radiographs across 11 anatomical sites. Notice the inherent class imbalance: 717 fractured cases versus 3,366 normal controls. If trained without correction, models learn to guess 'normal' for every image. We specifically address this challenge in our data preprocessing pipeline."*
 
 ---
 
-## Slide 8: Layer 5 — Diagnostic Core Engine (`src/inference.py`)
+## Slide 9: Work Done Till Review 1 (Completed Deliverables)
 
-### Core Diagnostic Architecture & Capabilities
-* **Dual-Mode Engine Flexibility**:
-  * **Live Neural Inference**: Executes forward token passes when GPU model weights are loaded.
-  * **Clinical Evaluation Fallback**: Heuristic fallback allowing testing on non-GPU workstations.
-* **Multi-Stage Diagnostic Reasoning**:
-  * **Cortical Edge Inspection**: Evaluates bone cortical margins for disruption, steps, and comminution.
-  * **Joint Alignment**: Inspects adjacent joint spaces for subluxation and traumatic dislocation.
-  * **Hardware Verification**: Confirms presence or absence of surgical plates, screws, and pins.
-* **Output Routing**:
-  * Routes findings to conversational Med-VQA, the ACR report generator, and the evaluation harness.
+| Milestone Task | Associated Script / Path | Current Status | Completed Output |
+| :--- | :--- | :---: | :--- |
+| **Dataset Ingestion** | `download_dataset.py` | ✅ Completed | Automated download, hash validation & extraction of 4,083 scans |
+| **Data Preprocessing** | `src/dataset_to_vlm.py` | ✅ Completed | Formulated 1,438 balanced LLaVA instruction pairs (Train: 1,148, Val: 164, Test: 126) |
+| **Baseline Scaffolding** | `src/inference.py` | ✅ Completed | Established inference core with dual-mode evaluation and coordinate localization |
+| **Reporting Engine** | `src/report_generator.py` | ✅ Completed | Automated clinical report generator producing structured text & signed PDF reports |
+| **Med-VQA Interface** | `src/app.py` | ✅ Completed | Interactive Gradio web application for X-ray upload, conversational VQA, and report download |
 
-> **Presenter Script**:
-> *"Layer 5 is our Diagnostic Core (`src/inference.py`). It performs multi-stage clinical inspection—evaluating cortical integrity, joint alignment, and fixation hardware—and routes the diagnostic outputs to both our conversational chat and PDF report generator in under 1.8 seconds."*
+> **Speaking Script**:
+> *"For Review 1, our foundational engineering is completed. As shown in this progress table, we have implemented the automated downloader, the data preprocessing script that generated 1,438 balanced conversation pairs, the baseline inference core, the clinical PDF report generator, and the interactive Gradio web application prototype."*
 
 ---
 
-## Slide 9: Layer 6 — System Outputs & Clinical Interfaces
+## Slide 10: Proposed Methodology & System Architecture
+* **1. Data Ingestion**: 4,083 FracAtlas radiographs + COCO bounding coordinates (`download_dataset.py`).
+* **2. Preprocessing & Instruction Tuning**: 1:1 balanced sampling producing 1,438 LLaVA-format conversation pairs with clinical queries (`src/dataset_to_vlm.py`).
+* **3. Foundation Model**: `Qwen2-VL-2B-Instruct` featuring dynamic-resolution Vision Transformer (ViT) & M-RoPE positional embeddings.
+* **4. Parameter-Efficient Fine-Tuning (PEFT)**: QLoRA 4-bit NormalFloat (NF4) via BitsAndBytes on attention projections (`q_proj`, `k_proj`, `v_proj`, `o_proj`).
+* **5. Diagnostic Core Engine**: Central inference engine executing fracture detection, coordinate localization, and routing to clinical outputs.
+* **6. Clinical Interfaces & Reporting**: Interactive Gradio Med-VQA Chat UI (`src/app.py`) + Automated ACR Clinical Radiology PDF Reports (`src/report_generator.py`).
 
-### Tri-Pillar Output Architecture
-* **6a. Med-VQA Conversational Chat (`src/app.py`)**:
-  * Interactive chat interface allowing clinicians to query uploaded radiographs in natural language.
-  * Example queries: *"Is there cortical disruption at the distal radius?"*, *"Are fixation screws present?"*
-* **6b. Structured Report Generator (`src/report_generator.py`)**:
-  * Generates ACR-standard clinical radiology reports with Patient ID, Technique, Findings, Localization coordinates, and definitive Impression.
-  * Exports tamper-evident PDF documents with electronic AI verification signatures.
-* **6c. Unified Architecture Dashboard (`dashboard/serve.py`)**:
-  * Zero external dependencies: runs on Python standard library (`http.server`) at `localhost:8080`.
-  * Dynamic filesystem monitor scanning repository modules every 10 seconds.
-
-> **Presenter Script**:
-> *"Layer 6 delivers our user-facing outputs: our Gradio Med-VQA chat where clinicians converse with radiographs, our ReportLab PDF engine generating signed hospital reports, and our zero-dependency architecture dashboard running locally on port 8080."*
+> **Speaking Script**:
+> *"Slide 10 illustrates our proposed system methodology. It follows a structured pipeline: data ingestion, balanced preprocessing, foundation model integration, QLoRA fine-tuning, the diagnostic core engine, and our dual clinical interfaces—conversational VQA and automated PDF reporting."*
 
 ---
 
-## Slide 10: Clinical Benchmark Evaluation & Metrics
+## Slide 11: System & Technical Specifications
+* **Hardware Specifications**:
+  * **Target Workstation**: Consumer Laptop / Lab Workstation (tested on Dell G15 / RTX 3050 6GB).
+  * **GPU VRAM Required**: 6 GB VRAM minimum for QLoRA 4-bit local training.
+  * **Peak Training VRAM**: **~3.8 GB** (well within 6 GB VRAM capacity).
+  * **System RAM**: 16 GB DDR4 / DDR5 RAM.
+  * **Storage Required**: 10 GB SSD space for dataset & checkpoints.
+  * **Cloud Option**: Google Colab Free Tier (NVIDIA Tesla T4 16 GB VRAM).
+* **Software Specifications**:
+  * **Operating System**: Windows 11 / Linux (Ubuntu) / macOS.
+  * **Programming Language**: Python 3.10+.
+  * **Deep Learning Framework**: PyTorch 2.2+, CUDA 12.1, Torchvision.
+  * **Transformers & PEFT**: HuggingFace Transformers 4.42+, BitsAndBytes (4-bit NF4), PEFT (LoRA).
+  * **Web & PDF Tools**: Gradio 4.32+ (WebUI), ReportLab 4.1+ (PDF reports).
 
-### Formal Evaluation Harness (`src/evaluate.py`)
-* **Standard Radiologist Validation Metrics**:
-  * **Sensitivity / Recall**: $\frac{TP}{TP + FN}$ (Rate of catching true fractures — clinical priority)
-  * **Specificity**: $\frac{TN}{TN + FP}$ (Rate of correctly clearing normal radiographs)
-  * **Precision (PPV)**: $\frac{TP}{TP + FP}$, **Balanced $F_1$-Score**, and **Overall Accuracy**.
-* **Confusion Matrix Structure**:
-  * Explicitly tracks True Positives ($TP$), False Positives ($FP$), True Negatives ($TN$), and False Negatives ($FN$).
-* **Automated Audit Export**:
-  * Exports detailed per-sample predictions to `evaluation_results/test_predictions_detailed.csv`.
-  * Exports summary metrics to `evaluation_results/benchmark_metrics_summary.json`.
-
-> **Presenter Script**:
-> *"In clinical AI, sensitivity is paramount to prevent missed fractures. Our evaluation harness (`src/evaluate.py`) evaluates the test set, computing Sensitivity, Specificity, and a full Confusion Matrix, while automatically exporting audit records to CSV."*
-
----
-
-## Slide 11: Future Research Scope & Extensions
-
-### Matching Architecture Future Nodes
-* **Clinical Literature Corpus (`literature` / CL)**:
-  * Ingestion of medical textbooks, orthopedic journals, and clinical case studies for rare bone anomalies (Osteogenesis Imperfecta, Paget's Disease, Osteosarcoma).
-* **Synthetic Report Generator (`synth_reports` / SR)**:
-  * Dedicated LLM clinical agent synthesizing comprehensive rare-disease patient case profiles.
-* **Medical Latent Diffusion (`diffusion` / MD)**:
-  * Latent diffusion model generating synthetic high-resolution radiographs of rare bone conditions.
-* **Rare Condition Clinical Sandbox (`sandbox` / SB)**:
-  * Interactive simulator evaluating VLM diagnostic robustness on synthetic out-of-distribution cases.
-
-> **Presenter Script**:
-> *"Slide 11 highlights our future research extensions directly from our architecture specification: ingesting clinical textbooks, generating synthetic case profiles with an LLM, generating rare-condition X-rays with latent diffusion, and evaluating them in a clinical sandbox."*
+> **Speaking Script**:
+> *"Slide 11 summarizes our system specifications. By leveraging 4-bit quantization and LoRA adapters, our local engine requires only 3.8 GB of VRAM during training, allowing full execution on a standard 6 GB consumer GPU workstation, with Google Colab T4 as a cloud scaling alternative."*
 
 ---
 
-## Slide 12: Implementation Roadmap, Team Roles & Review 1 Summary
+## Slide 12: Project Roadmap & Semester Plan (Timeline)
+* **Phase 1: Foundation & Preprocessing (Review 1 — ✅ COMPLETED)**:
+  * Literature survey and clinical need analysis.
+  * Automated dataset ingestion of 4,083 FracAtlas radiographs.
+  * Multimodal preprocessing & 1:1 balanced instruction dataset creation (1,438 conversation pairs).
+  * Diagnostic inference pipeline scaffolding, Gradio WebUI prototype, and report generator setup.
+* **Phase 2: Model Training & Ablation Studies (Review 2 — UPCOMING)**:
+  * Multi-epoch QLoRA fine-tuning execution on local RTX 3050 GPU and Colab T4.
+  * Validation loss tracking, learning rate tuning, and gradient accumulation optimization.
+  * Comparative ablation study: Zero-shot base model vs. Fine-tuned VLM.
+  * Error analysis across subtle hairline and non-displaced fracture sub-types.
+* **Phase 3: Clinical Validation & Final Defense (Review 3 / Final Review)**:
+  * Rigorous benchmark evaluation: Sensitivity, Specificity, F1-score, and Confusion Matrix on held-out test set.
+  * Final system integration into unified clinical Gradio web dashboard.
+  * Dissertation preparation, final documentation, and viva defense.
 
-### Roadmap & Task Allocation
-* **Phased Roadmap**:
-  * **Phase 1 (Review 1 — ✅ 100% Completed)**: Problem formulation, dataset ingestion, multimodal preprocessing, baseline architecture, inference core, Gradio UI, and evaluation harness.
-  * **Phase 2 (Review 2 — Next Milestone)**: Multi-epoch QLoRA fine-tuning, comparative ablation studies (Base vs. Fine-tuned), and subtle fracture error analysis.
-  * **Phase 3 (Review 3 / Final Defense)**: Diffusion data augmentation, dissertation documentation, and viva defense.
-* **Team Roles**:
-  * **Sahanawaz Hussain (Lead)**: Neural architecture design, training setup, inference engine, repository management.
-  * **Aryan (Member)**: Dataset ingestion pipeline, COCO parsing, balanced dataset formulation, benchmark harness.
-  * **Pranita (Member)**: Med-VQA web application, ReportLab clinical PDF engine, dashboard visualizer.
-* **Review 1 Summary**: Foundational engineering is fully operational and ready for Review 2 training runs.
-
-> **Presenter Script**:
-> *"In summary, our team has built a fully functional multimodal AI pipeline aligned with our neural architecture. All Phase 1 deliverables are verified and running locally. Thank you, and we welcome your questions and guidance."*
+> **Speaking Script**:
+> *"Slide 12 presents our phased roadmap across the semester. Having completed Phase 1 for Review 1, our upcoming focus for Review 2 is model fine-tuning and ablation experiments. In Phase 3, we will conduct full benchmark evaluations and finalize our thesis dissertation. Thank you, and we welcome your questions and feedback."*
