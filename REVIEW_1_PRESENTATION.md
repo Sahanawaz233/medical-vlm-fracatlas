@@ -7,7 +7,7 @@
 
 ---
 
-## 📋 Review 1 Slide Outline (12 Academic Slides)
+## 📋 Review 1 Slide Outline (13 Academic Slides)
 
 1. **Slide 1**: Title Slide (College, Department, Team, Guide, Project Title)
 2. **Slide 2**: Introduction & Background Overview
@@ -16,11 +16,12 @@
 5. **Slide 5**: Literature Survey & Comparative Analysis
 6. **Slide 6**: Research Gaps & Proposed Approach
 7. **Slide 7**: Project Objectives & Key Deliverables
-8. **Slide 8**: Dataset Description & Demographics (FracAtlas)
-9. **Slide 9**: Work Done Till Review 1 (Completed Deliverables)
-10. **Slide 10**: Proposed Methodology & System Architecture
-11. **Slide 11**: System & Technical Specifications (Hardware & Software)
-12. **Slide 12**: Project Roadmap & Semester Plan (Phases 1, 2, 3)
+8. **Slide 8**: Layer 1: Dataset Description & Demographics (FracAtlas)
+9. **Slide 9**: Layer 2: Multimodal Preprocessing Pipeline (`src/dataset_to_vlm.py`)
+10. **Slide 10**: Work Done Till Review 1 (Completed Deliverables Summary)
+11. **Slide 11**: Proposed Methodology & System Architecture (The 6 Layers)
+12. **Slide 12**: System & Technical Specifications (Hardware & Software)
+13. **Slide 13**: Project Roadmap & Semester Plan (Phases 1, 2, 3)
 
 ---
 
@@ -142,7 +143,7 @@
 
 ---
 
-## Slide 8: Dataset Description & Demographics (FracAtlas)
+## Slide 8: Layer 1: Dataset Description & Demographics (FracAtlas)
 * **Dataset Foundation**: Official peer-reviewed **FracAtlas** release (hosted on Figshare).
 * **Dataset Metrics**:
   * **Total High-Resolution Radiographs**: **4,083 images** (~352 MB).
@@ -153,42 +154,70 @@
 * **Multi-Format Ground Truth**:
   * Expert-annotated bounding boxes and segmentation masks in COCO, YOLO, and Pascal VOC formats.
 * **The Class Imbalance Challenge**:
-  * In raw data, over 82% of scans are normal. Without balanced sampling, a model learns a trivial shortcut to predict 'normal' for all scans, yielding 0% clinical sensitivity.
+  * Over 82% of raw radiographs are non-fractured normal controls. Without balanced sampling, models learn to guess 'normal' for all scans, yielding 0% clinical sensitivity.
 
 > **Speaking Script**:
-> *"We are using the FracAtlas dataset containing 4,083 radiographs across 11 anatomical sites. Notice the inherent class imbalance: 717 fractured cases versus 3,366 normal controls. If trained without correction, models learn to guess 'normal' for every image. We specifically address this challenge in our data preprocessing pipeline."*
+> *"Layer 1 represents our raw data ingestion from FracAtlas, containing 4,083 radiographs across 11 anatomical sites. Notice the severe class imbalance: 717 fractured cases versus 3,366 normal controls. If trained without correction, models learn to guess 'normal' for every image. We specifically address this in Layer 2 of our pipeline."*
 
 ---
 
-## Slide 9: Work Done Till Review 1 (Completed Deliverables)
+## Slide 9: Layer 2: Multimodal Preprocessing Pipeline (`src/dataset_to_vlm.py`)
+* **Core Pipeline Role**: Converts raw radiographs, tabular metadata, and COCO masks into standardized VLM instruction-tuning datasets.
+* **3-Step Preprocessing Flow**:
+  1. **Annotation Parsing**: Ingests raw split CSVs and `COCO_fracture_masks.json` to extract precise bounding coordinates `[x1, y1, x2, y2]`.
+  2. **1:1 Balanced Negative-Control Sampling**: Solves the 82% normal skew by pairing each fractured scan with an anatomically matched normal control.
+  3. **Multi-Turn Clinical Prompt Formulation**: Structures multi-turn clinical dialogues with `<image>` tags, examination queries, localization coordinates, and clinical impressions.
+* **Generated Dataset Splits (1,438 Total Conversations)**:
+  * **Training Split (`train.json`)**: **1,148 samples** (574 fractured + 574 normal controls)
+  * **Validation Split (`val.json`)**: **164 samples** (82 fractured + 82 normal controls)
+  * **Test Benchmark Split (`test.json`)**: **126 samples** (63 fractured + 63 normal controls)
+* **Standardized LLaVA / ShareGPT Schema**:
+  ```json
+  {
+    "id": "frac_IMG0000019",
+    "image": "images/Fractured/IMG0000019.jpg",
+    "is_fractured": true,
+    "conversations": [
+      {"from": "human", "value": "<image>\nExamine radiograph."},
+      {"from": "gpt", "value": "FINDINGS: Acute fracture at [1242, 929, 1515, 1076]. Impression: Distal radius fracture."}
+    ]
+  }
+  ```
+
+> **Speaking Script**:
+> *"Slide 9 details Layer 2 of our architecture: the Multimodal Preprocessing Pipeline implemented in `src/dataset_to_vlm.py`. Here, we solved the 82% class skew by enforcing a strict 1:1 ratio between fractured cases and normal controls. This pipeline successfully generated 1,438 curated conversation pairs divided into train, validation, and test splits formatted in the standard LLaVA multimodal schema."*
+
+---
+
+## Slide 10: Work Done Till Review 1 (Completed Deliverables)
 
 | Milestone Task | Associated Script / Path | Current Status | Completed Output |
 | :--- | :--- | :---: | :--- |
-| **Dataset Ingestion** | `download_dataset.py` | ✅ Completed | Automated download, hash validation & extraction of 4,083 scans |
-| **Data Preprocessing** | `src/dataset_to_vlm.py` | ✅ Completed | Formulated 1,438 balanced LLaVA instruction pairs (Train: 1,148, Val: 164, Test: 126) |
-| **Baseline Scaffolding** | `src/inference.py` | ✅ Completed | Established inference core with dual-mode evaluation and coordinate localization |
-| **Reporting Engine** | `src/report_generator.py` | ✅ Completed | Automated clinical report generator producing structured text & signed PDF reports |
-| **Med-VQA Interface** | `src/app.py` | ✅ Completed | Interactive Gradio web application for X-ray upload, conversational VQA, and report download |
+| **Layer 1: Dataset Ingestion** | `download_dataset.py` | ✅ Completed | Automated script fetching, verifying MD5 checksum, and extracting 4,083 scans. |
+| **Layer 2: Preprocessing Pipeline** | `src/dataset_to_vlm.py` | ✅ Completed | Enforced 1:1 balanced sampling; created 1,438 LLaVA dialogue pairs (train: 1,148, val: 164, test: 126). |
+| **Layer 5: Diagnostic Core** | `src/inference.py` | ✅ Completed | Established inference engine with dual-mode evaluation, coordinate localization, and Med-VQA. |
+| **Layer 6: Reporting Engine** | `src/report_generator.py` | ✅ Completed | Built automated clinical report generator producing structured text & signed PDF reports. |
+| **Layer 6: Med-VQA Interface** | `src/app.py` | ✅ Completed | Interactive Gradio web application for X-ray upload, conversational VQA, and report download. |
 
 > **Speaking Script**:
 > *"For Review 1, our foundational engineering is completed. As shown in this progress table, we have implemented the automated downloader, the data preprocessing script that generated 1,438 balanced conversation pairs, the baseline inference core, the clinical PDF report generator, and the interactive Gradio web application prototype."*
 
 ---
 
-## Slide 10: Proposed Methodology & System Architecture
-* **1. Data Ingestion**: 4,083 FracAtlas radiographs + COCO bounding coordinates (`download_dataset.py`).
-* **2. Preprocessing & Instruction Tuning**: 1:1 balanced sampling producing 1,438 LLaVA-format conversation pairs with clinical queries (`src/dataset_to_vlm.py`).
-* **3. Foundation Model**: `Qwen2-VL-2B-Instruct` featuring dynamic-resolution Vision Transformer (ViT) & M-RoPE positional embeddings.
-* **4. Parameter-Efficient Fine-Tuning (PEFT)**: QLoRA 4-bit NormalFloat (NF4) via BitsAndBytes on attention projections (`q_proj`, `k_proj`, `v_proj`, `o_proj`).
-* **5. Diagnostic Core Engine**: Central inference engine executing fracture detection, coordinate localization, and routing to clinical outputs.
-* **6. Clinical Interfaces & Reporting**: Interactive Gradio Med-VQA Chat UI (`src/app.py`) + Automated ACR Clinical Radiology PDF Reports (`src/report_generator.py`).
+## Slide 11: Proposed Methodology & System Architecture
+* **Layer 1: Data Ingestion**: 4,083 FracAtlas radiographs + COCO bounding coordinates (`download_dataset.py`).
+* **Layer 2: Preprocessing Pipeline**: 1:1 balanced sampling producing 1,438 LLaVA-format conversation pairs with clinical queries (`src/dataset_to_vlm.py`).
+* **Layer 3: Foundation Model**: `Qwen2-VL-2B-Instruct` featuring dynamic-resolution Vision Transformer (ViT) & M-RoPE positional embeddings.
+* **Layer 4: Parameter-Efficient Fine-Tuning (PEFT)**: QLoRA 4-bit NormalFloat (NF4) via BitsAndBytes on attention projections (`q_proj`, `k_proj`, `v_proj`, `o_proj`).
+* **Layer 5: Diagnostic Core Engine**: Central inference engine executing fracture detection, coordinate localization, and routing to clinical outputs.
+* **Layer 6: Clinical Interfaces & Reporting**: Interactive Gradio Med-VQA Chat UI (`src/app.py`) + Automated ACR Clinical Radiology PDF Reports (`src/report_generator.py`).
 
 > **Speaking Script**:
-> *"Slide 10 illustrates our proposed system methodology. It follows a structured pipeline: data ingestion, balanced preprocessing, foundation model integration, QLoRA fine-tuning, the diagnostic core engine, and our dual clinical interfaces—conversational VQA and automated PDF reporting."*
+> *"Slide 11 illustrates our proposed system methodology. It follows a structured 6-layer pipeline: data ingestion, balanced preprocessing, foundation model integration, QLoRA fine-tuning, the diagnostic core engine, and our dual clinical interfaces—conversational VQA and automated PDF reporting."*
 
 ---
 
-## Slide 11: System & Technical Specifications
+## Slide 12: System & Technical Specifications
 * **Hardware Specifications**:
   * **Target Workstation**: Consumer Laptop / Lab Workstation (tested on Dell G15 / RTX 3050 6GB).
   * **GPU VRAM Required**: 6 GB VRAM minimum for QLoRA 4-bit local training.
@@ -204,11 +233,11 @@
   * **Web & PDF Tools**: Gradio 4.32+ (WebUI), ReportLab 4.1+ (PDF reports).
 
 > **Speaking Script**:
-> *"Slide 11 summarizes our system specifications. By leveraging 4-bit quantization and LoRA adapters, our local engine requires only 3.8 GB of VRAM during training, allowing full execution on a standard 6 GB consumer GPU workstation, with Google Colab T4 as a cloud scaling alternative."*
+> *"Slide 12 summarizes our system specifications. By leveraging 4-bit quantization and LoRA adapters, our local engine requires only 3.8 GB of VRAM during training, allowing full execution on a standard 6 GB consumer GPU workstation, with Google Colab T4 as a cloud scaling alternative."*
 
 ---
 
-## Slide 12: Project Roadmap & Semester Plan (Timeline)
+## Slide 13: Project Roadmap & Semester Plan (Timeline)
 * **Phase 1: Foundation & Preprocessing (Review 1 — ✅ COMPLETED)**:
   * Literature survey and clinical need analysis.
   * Automated dataset ingestion of 4,083 FracAtlas radiographs.
@@ -225,4 +254,4 @@
   * Dissertation preparation, final documentation, and viva defense.
 
 > **Speaking Script**:
-> *"Slide 12 presents our phased roadmap across the semester. Having completed Phase 1 for Review 1, our upcoming focus for Review 2 is model fine-tuning and ablation experiments. In Phase 3, we will conduct full benchmark evaluations and finalize our thesis dissertation. Thank you, and we welcome your questions and feedback."*
+> *"Slide 13 presents our phased roadmap across the semester. Having completed Phase 1 for Review 1, our upcoming focus for Review 2 is model fine-tuning and ablation experiments. In Phase 3, we will conduct full benchmark evaluations and finalize our thesis dissertation. Thank you, and we welcome your questions and feedback."*
