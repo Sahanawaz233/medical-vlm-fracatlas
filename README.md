@@ -184,6 +184,7 @@ medical-vlm-fracatlas/
 * **Sahanawaz Hussain** ([@Sahanawaz233](https://github.com/Sahanawaz233)) - Project Lead
 * **Aryan** ([@Aryaxnk](https://github.com/Aryaxnk)) - Project Member / Contributor
 * **Pranita** ([@pranita157](https://github.com/pranita157)) - Project Member / Contributor
+* **[@banesspidy-sketch](https://github.com/banesspidy-sketch)** - Project Member / Contributor
 
 ---
 
