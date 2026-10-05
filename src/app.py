@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
 """
-FracAtlas Med-VQA & Diagnostic Web Application
-==============================================
-Interactive multimodal clinical interface for:
-  - Drag-and-drop X-ray upload
-  - Fracture detection and anatomical localization
-  - Med-VQA conversational clinical queries
-  - Structured clinical radiology report generation and download
+FracAtlas Simple Diagnostic Testing Workstation
+===============================================
+Clean, straightforward, minimalistic interface for testing:
+  - Select test X-ray from presets or upload an image
+  - Click "Diagnose" to see Fracture/Normal status, confidence, findings, impression
+  - Ask clinical VQA questions
+  - Generate clinical report
 """
 
 import os
 import sys
 import json
 import time
+import base64
 import argparse
-from pathlib import Path
+import urllib.parse
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 
-# Add src/ to python path
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SRC_DIR)
 if SRC_DIR not in sys.path:
@@ -25,184 +26,429 @@ if SRC_DIR not in sys.path:
 from inference import MedicalVLMInferenceEngine
 from report_generator import generate_clinical_report
 
-
-def run_gradio_app(port=7860, share=False):
-    """Launch Gradio Web Application."""
-    import gradio as gr
-
-    engine = MedicalVLMInferenceEngine()
-    engine.load_model()
-
-    def process_radiograph(image):
-        if image is None:
-            return "Please upload an X-ray radiograph.", "", ""
-
-        # Save temporary image if needed
-        temp_dir = os.path.join(PROJECT_DIR, "data", "temp_uploads")
-        os.makedirs(temp_dir, exist_ok=True)
-        temp_path = os.path.join(temp_dir, f"upload_{int(time.time())}.jpg")
-        image.save(temp_path)
-
-        diag = engine.diagnose_xray(temp_path)
-        status = "🔴 POSITIVE: FRACTURE DETECTED" if diag["fracture_detected"] else "🟢 NEGATIVE: NO FRACTURE"
-        findings = diag["findings"]
-        impression = diag["impression"]
-        coords = f"Coordinates: {diag.get('bounding_box', 'N/A')}" if diag.get("bounding_box") else "No focal defect"
-
-        return f"**Status**: {status}\n**Confidence**: {diag['confidence']*100:.1f}%\n**Localization**: {coords}", findings, impression
-
-    def handle_vqa(image, question, chat_history):
-        if image is None:
-            return chat_history, "Please upload an X-ray radiograph first."
-        if not question or not question.strip():
-            return chat_history, ""
-
-        temp_dir = os.path.join(PROJECT_DIR, "data", "temp_uploads")
-        os.makedirs(temp_dir, exist_ok=True)
-        temp_path = os.path.join(temp_dir, f"vqa_{int(time.time())}.jpg")
-        image.save(temp_path)
-
-        answer = engine.answer_query(temp_path, question)
-
-        chat_history = chat_history or []
-        chat_history.append({
-            "role": "user",
-            "content": question
-        })
-        chat_history.append({
-            "role": "assistant",
-            "content": answer
-        })
-        return chat_history, ""
-
-    def make_report(image):
-        if image is None:
-            return "Please upload an X-ray radiograph first.", None
-        temp_dir = os.path.join(PROJECT_DIR, "data", "temp_uploads")
-        os.makedirs(temp_dir, exist_ok=True)
-        temp_path = os.path.join(temp_dir, f"report_{int(time.time())}.jpg")
-        image.save(temp_path)
-
-        diag = engine.diagnose_xray(temp_path)
-        res = generate_clinical_report(diag, output_dir=os.path.join(PROJECT_DIR, "reports"))
-        download_file = res["pdf_path"] if res.get("pdf_path") and os.path.exists(res["pdf_path"]) else res["txt_path"]
-        return res["report_text"], download_file
-
-    with gr.Blocks(title="FracAtlas Med-VQA Diagnostic Platform", theme=gr.themes.Soft()) as demo:
-        gr.Markdown(
-            """
-            # 🦴 FracAtlas Multimodal AI Diagnostic Platform
-            ### Orthopedic Fracture Detection, Med-VQA Conversational Radiologist & Automated Reports
-            """
-        )
-
-        with gr.Row():
-            with gr.Column(scale=1):
-                input_image = gr.Image(type="pil", label="Upload Musculoskeletal Radiograph (X-Ray)")
-                analyze_btn = gr.Button("🔍 Run Diagnostic Analysis", variant="primary")
-                report_btn = gr.Button("📄 Generate Clinical Radiology Report", variant="secondary")
-
-            with gr.Column(scale=2):
-                with gr.Tab("Diagnostic Evaluation"):
-                    diag_status = gr.Markdown("Upload an image and click **Run Diagnostic Analysis**.")
-                    diag_findings = gr.Textbox(label="Radiological Findings", lines=4)
-                    diag_impression = gr.Textbox(label="Diagnostic Impression", lines=3)
-
-                with gr.Tab("Med-VQA Clinical Chat"):
-                    chatbot = gr.Chatbot(label="Consultation Feed", height=300, type="messages")
-                    user_msg = gr.Textbox(placeholder="Ask a question (e.g. 'Is there a fracture?', 'Where is the lesion?')...", label="Clinical Query")
-                    send_btn = gr.Button("Send Question")
-
-                with gr.Tab("Radiology Report"):
-                    report_preview = gr.TextArea(label="Clinical Report Document", lines=12)
-                    download_btn = gr.File(label="Download Official Report")
-
-        analyze_btn.click(process_radiograph, inputs=[input_image], outputs=[diag_status, diag_findings, diag_impression])
-        send_btn.click(handle_vqa, inputs=[input_image, user_msg, chatbot], outputs=[chatbot, user_msg])
-        report_btn.click(make_report, inputs=[input_image], outputs=[report_preview, download_btn])
-
-    print(f"\n[Med-VQA] Launching Gradio Web Server on port {port}...")
-    demo.launch(server_port=port, share=share)
+engine = MedicalVLMInferenceEngine()
+engine.load_model()
 
 
-def run_standalone_fallback(port=7860):
-    """Fallback zero-dependency clinical web server when Gradio is not installed."""
-    import http.server
-    import urllib.parse
+def get_sample_images():
+    samples = []
+    frac_dir = os.path.join(PROJECT_DIR, "data/raw/FracAtlas/FracAtlas/images/Fractured")
+    norm_dir = os.path.join(PROJECT_DIR, "data/raw/FracAtlas/FracAtlas/images/Non_fractured")
 
-    engine = MedicalVLMInferenceEngine()
-    engine.load_model()
+    if os.path.exists(frac_dir):
+        for f in sorted(os.listdir(frac_dir))[:6]:
+            if f.lower().endswith(('.jpg', '.jpeg', '.png')):
+                samples.append({
+                    "id": f,
+                    "label": f"[Fractured] {f}",
+                    "path": os.path.join("data/raw/FracAtlas/FracAtlas/images/Fractured", f)
+                })
 
-    class StandaloneAppHandler(http.server.SimpleHTTPRequestHandler):
-        def do_GET(self):
-            parsed = urllib.parse.urlparse(self.path)
-            if parsed.path == "/api/sample":
-                # Run sample diagnosis
-                sample_img = os.path.join(PROJECT_DIR, "data/raw/FracAtlas/FracAtlas/images/Fractured/IMG0000019.jpg")
-                diag = engine.diagnose_xray(sample_img)
+    if os.path.exists(norm_dir):
+        for f in sorted(os.listdir(norm_dir))[:6]:
+            if f.lower().endswith(('.jpg', '.jpeg', '.png')):
+                samples.append({
+                    "id": f,
+                    "label": f"[Normal] {f}",
+                    "path": os.path.join("data/raw/FracAtlas/FracAtlas/images/Non_fractured", f)
+                })
+    return samples
+
+
+class SimpleAppHandler(SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        super().end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.end_headers()
+
+    def do_GET(self):
+        parsed = urllib.parse.urlparse(self.path)
+
+        if parsed.path == "/api/samples":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(get_sample_images()).encode("utf-8"))
+            return
+
+        if parsed.path.startswith("/image/"):
+            rel_path = urllib.parse.unquote(parsed.path[7:])
+            full_path = os.path.join(PROJECT_DIR, rel_path)
+            if os.path.exists(full_path):
+                self.send_response(200)
+                content_type = "image/jpeg" if full_path.endswith((".jpg", ".jpeg")) else "image/png"
+                self.send_header("Content-Type", content_type)
+                self.end_headers()
+                with open(full_path, "rb") as f:
+                    self.wfile.write(f.read())
+                return
+            else:
+                self.send_error(404, "Image not found")
+                return
+
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(HTML_CONTENT.encode("utf-8"))
+
+    def do_POST(self):
+        parsed = urllib.parse.urlparse(self.path)
+        content_length = int(self.headers.get('Content-Length', 0))
+        post_data = self.rfile.read(content_length)
+
+        try:
+            req = json.loads(post_data.decode("utf-8"))
+        except Exception:
+            req = {}
+
+        if parsed.path == "/api/diagnose":
+            image_path = req.get("image_path")
+            image_base64 = req.get("image_base64")
+
+            if image_base64:
+                temp_dir = os.path.join(PROJECT_DIR, "data", "temp_uploads")
+                os.makedirs(temp_dir, exist_ok=True)
+                target_path = os.path.join(temp_dir, f"upload_{int(time.time()*1000)}.jpg")
+                if "," in image_base64:
+                    image_base64 = image_base64.split(",")[1]
+                with open(target_path, "wb") as f:
+                    f.write(base64.b64decode(image_base64))
+            elif image_path:
+                target_path = os.path.join(PROJECT_DIR, image_path) if not os.path.isabs(image_path) else image_path
+            else:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "No image provided"}).encode("utf-8"))
+                return
+
+            try:
+                diag = engine.diagnose_xray(target_path)
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
                 self.wfile.write(json.dumps(diag).encode("utf-8"))
-                return
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+            return
 
-            # Serve minimal embedded clinical dashboard
-            html = f"""<!DOCTYPE html>
-<html>
+        if parsed.path == "/api/vqa":
+            image_path = req.get("image_path")
+            question = req.get("question", "")
+            target_path = os.path.join(PROJECT_DIR, image_path) if not os.path.isabs(image_path) else image_path
+
+            try:
+                answer = engine.answer_query(target_path, question)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"answer": answer}).encode("utf-8"))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+            return
+
+        if parsed.path == "/api/report":
+            image_path = req.get("image_path")
+            target_path = os.path.join(PROJECT_DIR, image_path) if not os.path.isabs(image_path) else image_path
+
+            try:
+                diag = engine.diagnose_xray(target_path)
+                rep = generate_clinical_report(diag, output_dir=os.path.join(PROJECT_DIR, "reports"))
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "report_text": rep["report_text"]
+                }).encode("utf-8"))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+            return
+
+        self.send_error(404, "Endpoint not found")
+
+
+HTML_CONTENT = """<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>FracAtlas Med-VQA Platform</title>
+    <meta charset="UTF-8">
+    <title>FracAtlas VLM Diagnostic Test Interface</title>
     <style>
-        body {{ font-family: -apple-system, sans-serif; background: #030308; color: #f1f5f9; padding: 40px; }}
-        .card {{ background: rgba(14, 42, 54, 0.6); border: 1px solid #00ffc8; border-radius: 12px; padding: 24px; max-width: 800px; margin: 0 auto; }}
-        h1 {{ color: #00ffc8; margin-top: 0; }}
-        .badge {{ display: inline-block; padding: 4px 12px; border-radius: 20px; font-weight: bold; background: #00ffc8; color: #030308; }}
-        pre {{ background: #080a14; padding: 16px; border-radius: 8px; border: 1px solid #334155; overflow-x: auto; color: #cbd5e1; }}
-        button {{ background: #00ffc8; color: #030308; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }}
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background: #f8fafc;
+            color: #0f172a;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 24px;
+        }
+        h1 { margin-top: 0; font-size: 22px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        .row { display: flex; gap: 20px; margin-top: 15px; }
+        .col { flex: 1; }
+        label { font-weight: bold; font-size: 14px; display: block; margin-bottom: 6px; }
+        select, input[type="file"], input[type="text"], button {
+            padding: 8px 12px;
+            border: 1px solid #94a3b8;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        select { width: 100%; }
+        button {
+            background: #2563eb;
+            color: #ffffff;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover { background: #1d4ed8; }
+        .btn-secondary { background: #475569; }
+        .btn-secondary:hover { background: #334155; }
+        .img-box {
+            width: 100%;
+            height: 320px;
+            background: #000;
+            border: 1px solid #94a3b8;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .result-box {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 14px;
+            margin-top: 15px;
+            min-height: 160px;
+            font-family: monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+        .status-positive { color: #dc2626; font-weight: bold; font-size: 16px; }
+        .status-negative { color: #16a34a; font-weight: bold; font-size: 16px; }
+        .chat-row { display: flex; gap: 8px; margin-top: 10px; }
+        .chat-row input { flex: 1; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>🦴 FracAtlas Med-VQA Clinical Platform</h1>
-        <p><span class="badge">Standalone Core Engine Active</span></p>
-        <p>The diagnostic core engine is online and fully functional.</p>
-        <p>To enable the full Gradio GUI with real-time image upload, install Gradio:</p>
-        <pre>pip install gradio</pre>
-        <button onclick="testInference()">Run Sample Diagnostic Test</button>
-        <div id="output" style="margin-top: 20px;"></div>
-    </div>
-    <script>
-        async function testInference() {{
-            document.getElementById('output').innerHTML = '<em>Running clinical evaluation...</em>';
-            const res = await fetch('/api/sample');
-            const data = await res.json();
-            document.getElementById('output').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-        }}
-    </script>
-</body>
-</html>"""
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html")
-            self.end_headers()
-            self.wfile.write(html.encode("utf-8"))
 
-    print(f"\n[Med-VQA] Launching Standalone Web Interface at: http://localhost:{port}")
-    server = http.server.HTTPServer(("", port), StandaloneAppHandler)
-    server.serve_forever()
+<div class="container">
+    <h1>🦴 FracAtlas VLM Diagnostic Test Interface</h1>
+
+    <div class="row">
+        <!-- LEFT: Controls & Image -->
+        <div class="col">
+            <label>1. Select Sample Radiograph:</label>
+            <select id="sampleSelect" onchange="onSelectSample()">
+                <option value="">-- Loading samples --</option>
+            </select>
+
+            <div style="margin-top: 12px;">
+                <label>OR Upload Custom X-Ray:</label>
+                <input type="file" id="uploadInput" accept="image/*" onchange="onUploadImage(event)">
+            </div>
+
+            <div class="img-box">
+                <img id="previewImg" src="" alt="Selected Radiograph Preview" style="display:none;">
+                <span id="noImgText" style="color: #94a3b8;">No radiograph selected</span>
+            </div>
+
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button onclick="runDiagnosis()">🔍 Run Diagnosis</button>
+                <button class="btn-secondary" onclick="generateReport()">📄 Generate Report</button>
+            </div>
+        </div>
+
+        <!-- RIGHT: Results & Med-VQA -->
+        <div class="col">
+            <label>Diagnostic Output:</label>
+            <div id="resultBox" class="result-box">Select an X-ray image and click "Run Diagnosis".</div>
+
+            <div style="margin-top: 20px;">
+                <label>Med-VQA (Ask a question about this X-ray):</label>
+                <div class="chat-row">
+                    <input type="text" id="vqaInput" placeholder="e.g. Is there a fracture? Where is it?" onkeypress="if(event.key==='Enter') sendVQA()">
+                    <button onclick="sendVQA()">Ask</button>
+                </div>
+                <div id="vqaResult" class="result-box" style="min-height: 80px; margin-top: 10px;">VQA response will appear here.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentImagePath = "";
+    let currentImageBase64 = null;
+
+    async function loadSamples() {
+        const res = await fetch('/api/samples');
+        const samples = await res.json();
+        const select = document.getElementById('sampleSelect');
+        select.innerHTML = '<option value="">-- Choose a test radiograph --</option>';
+        samples.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.path;
+            opt.textContent = s.label;
+            select.appendChild(opt);
+        });
+
+        if (samples.length > 0) {
+            select.selectedIndex = 1;
+            onSelectSample();
+        }
+    }
+
+    function onSelectSample() {
+        const select = document.getElementById('sampleSelect');
+        const path = select.value;
+        if (!path) return;
+
+        currentImagePath = path;
+        currentImageBase64 = null;
+        document.getElementById('uploadInput').value = "";
+
+        const img = document.getElementById('previewImg');
+        img.src = '/image/' + encodeURIComponent(path);
+        img.style.display = 'block';
+        document.getElementById('noImgText').style.display = 'none';
+
+        document.getElementById('resultBox').innerText = "Image loaded. Click 'Run Diagnosis'.";
+        document.getElementById('vqaResult').innerText = "VQA response will appear here.";
+    }
+
+    function onUploadImage(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            currentImageBase64 = evt.target.result;
+            currentImagePath = "";
+            document.getElementById('sampleSelect').selectedIndex = 0;
+
+            const img = document.getElementById('previewImg');
+            img.src = evt.target.result;
+            img.style.display = 'block';
+            document.getElementById('noImgText').style.display = 'none';
+
+            document.getElementById('resultBox').innerText = "Custom image uploaded. Click 'Run Diagnosis'.";
+            document.getElementById('vqaResult').innerText = "VQA response will appear here.";
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function runDiagnosis() {
+        if (!currentImagePath && !currentImageBase64) {
+            alert("Please select or upload an X-ray image first.");
+            return;
+        }
+
+        document.getElementById('resultBox').innerText = "Running diagnostic analysis...";
+
+        const payload = currentImageBase64 ? { image_base64: currentImageBase64 } : { image_path: currentImagePath };
+        const res = await fetch('/api/diagnose', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data.error) {
+            document.getElementById('resultBox').innerText = "Error: " + data.error;
+            return;
+        }
+
+        const statusTag = data.fracture_detected ? 
+            "STATUS: 🔴 POSITIVE (FRACTURE DETECTED)" : 
+            "STATUS: 🟢 NEGATIVE (NO FRACTURE)";
+
+        const out = `========================================
+${statusTag}
+CONFIDENCE: ${(data.confidence * 100).toFixed(1)}%
+COORDINATES: ${data.bounding_box || 'None'}
+========================================
+
+FINDINGS:
+${data.findings}
+
+IMPRESSION:
+${data.impression}`;
+
+        document.getElementById('resultBox').innerText = out;
+    }
+
+    async function sendVQA() {
+        const q = document.getElementById('vqaInput').value.trim();
+        if (!q) return;
+
+        document.getElementById('vqaResult').innerText = "Processing question...";
+
+        const payload = { image_path: currentImagePath, question: q };
+        const res = await fetch('/api/vqa', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        document.getElementById('vqaResult').innerText = data.answer || data.error;
+    }
+
+    async function generateReport() {
+        if (!currentImagePath && !currentImageBase64) {
+            alert("Please select or upload an X-ray image first.");
+            return;
+        }
+
+        document.getElementById('resultBox').innerText = "Generating formal clinical report...";
+
+        const payload = { image_path: currentImagePath };
+        const res = await fetch('/api/report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        document.getElementById('resultBox').innerText = data.report_text || data.error;
+    }
+
+    window.onload = loadSamples;
+</script>
+
+</body>
+</html>
+"""
 
 
 def main():
-    parser = argparse.ArgumentParser(description="FracAtlas Med-VQA Web Platform")
-    parser.add_argument("--port", type=int, default=7860, help="Port to run web app (default: 7860)")
-    parser.add_argument("--share", action="store_true", help="Generate public shareable link")
+    parser = argparse.ArgumentParser(description="FracAtlas Simple Diagnostic Test Server")
+    parser.add_argument("--port", type=int, default=7860, help="Port (default: 7860)")
     args = parser.parse_args()
 
-    try:
-        import gradio
-        run_gradio_app(port=args.port, share=args.share)
-    except ImportError:
-        print("[Notice] Gradio is not installed. Launching Standalone Clinical Web Interface...")
-        run_standalone_fallback(port=args.port)
+    print(f"\n[Simple Test Studio] Running at: http://localhost:{args.port}\n")
+    server = HTTPServer(("", args.port), SimpleAppHandler)
+    server.serve_forever()
 
 
 if __name__ == "__main__":
