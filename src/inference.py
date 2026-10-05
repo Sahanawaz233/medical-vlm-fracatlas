@@ -108,28 +108,79 @@ class MedicalVLMInferenceEngine:
         import torch
 
         image = Image.open(image_path).convert("RGB")
-        prompt = (
-            "<|im_start|>system\nYou are an expert orthopedic radiologist specializing in musculoskeletal radiographs.<|im_end|>\n"
-            "<|im_start|>user\n<image>\nExamine this musculoskeletal radiograph. Describe your diagnostic findings and impression.<|im_end|>\n"
-            "<|im_start|>assistant\n"
+
+        messages = [
+            {
+                "role": "system",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "You are an expert orthopedic radiologist specializing in musculoskeletal radiographs."
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "image": image,
+                    },
+                    {
+                        "type": "text",
+                        "text": "Examine this musculoskeletal radiograph. Describe your diagnostic findings and impression."
+                    },
+                ],
+            },
+        ]
+
+        text = self.processor.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
         )
-        inputs = self.processor(text=[prompt], images=[image], return_tensors="pt")
+
+        inputs = self.processor(
+            text=[text],
+            images=[image],
+            padding=True,
+            return_tensors="pt"
+        )
+
         if self.device == "cuda":
             inputs = {k: v.to("cuda") for k, v in inputs.items()}
 
         with torch.no_grad():
-            outputs = self.model.generate(**inputs, max_new_tokens=256)
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=256
+            )
 
-        generated_text = self.processor.batch_decode(outputs, skip_special_tokens=True)[0]
-        fracture_detected = "fracture" in generated_text.lower() and "no acute fracture" not in generated_text.lower()
+        generated_text = self.processor.batch_decode(
+            outputs,
+            skip_special_tokens=True
+        )[0]
+
+        fracture_detected = (
+            "fracture" in generated_text.lower()
+            and "no acute fracture" not in generated_text.lower()
+        )
 
         return {
             "image_path": image_path,
             "fracture_detected": fracture_detected,
             "confidence": 0.94 if fracture_detected else 0.97,
             "findings": generated_text.strip(),
-            "impression": "Acute musculoskeletal fracture confirmed." if fracture_detected else "No acute bone fracture identified.",
-            "bounding_box": "[1242, 929, 1515, 1076]" if fracture_detected else None
+            "impression": (
+                "Acute musculoskeletal fracture confirmed."
+                if fracture_detected
+                else "No acute bone fracture identified."
+            ),
+            "bounding_box": (
+                "[1242, 929, 1515, 1076]"
+                if fracture_detected
+                else None
+            )
         }
 
     def _clinical_evaluation_heuristic(self, image_path):

@@ -63,8 +63,16 @@ def run_gradio_app(port=7860, share=False):
         image.save(temp_path)
 
         answer = engine.answer_query(temp_path, question)
+
         chat_history = chat_history or []
-        chat_history.append((question, answer))
+        chat_history.append({
+            "role": "user",
+            "content": question
+        })
+        chat_history.append({
+            "role": "assistant",
+            "content": answer
+        })
         return chat_history, ""
 
     def make_report(image):
@@ -101,7 +109,7 @@ def run_gradio_app(port=7860, share=False):
                     diag_impression = gr.Textbox(label="Diagnostic Impression", lines=3)
 
                 with gr.Tab("Med-VQA Clinical Chat"):
-                    chatbot = gr.Chatbot(label="Consultation Feed", height=300)
+                    chatbot = gr.Chatbot(label="Consultation Feed", height=300, type="messages")
                     user_msg = gr.Textbox(placeholder="Ask a question (e.g. 'Is there a fracture?', 'Where is the lesion?')...", label="Clinical Query")
                     send_btn = gr.Button("Send Question")
 
