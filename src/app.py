@@ -40,25 +40,52 @@ def run_gradio_app(port=7860, share=False):
         # Save temporary image if needed
         temp_dir = os.path.join(PROJECT_DIR, "data", "temp_uploads")
         os.makedirs(temp_dir, exist_ok=True)
-        temp_path = os.path.join(temp_dir, f"upload_{int(time.time())}.jpg")
+
+        temp_path = os.path.join(
+            temp_dir,
+            f"upload_{int(time.time())}.jpg"
+        )
+
         image.save(temp_path)
 
         diag = engine.diagnose_xray(temp_path)
-        status = "🔴 POSITIVE: FRACTURE DETECTED" if diag["fracture_detected"] else "🟢 NEGATIVE: NO FRACTURE"
+
+        status = (
+            "🔴 POSITIVE: FRACTURE DETECTED"
+            if diag["fracture_detected"]
+            else "🟢 NEGATIVE: NO FRACTURE"
+        )
+
         findings = diag["findings"]
         impression = diag["impression"]
-        coords = f"Coordinates: {diag.get('bounding_box', 'N/A')}" if diag.get("bounding_box") else "No focal defect"
+        print("[DEBUG APP] FINDINGS:", repr(findings))
+        print("[DEBUG APP] IMPRESSION:", repr(impression))
 
-        return f"**Status**: {status}\n**Confidence**: {diag['confidence']*100:.1f}%\n**Localization**: {coords}", findings, impression
+        coords = (
+            f"Coordinates: {diag.get('bounding_box')}"
+            if diag.get("bounding_box") is not None
+            else "Not available"
+        )
 
-       
+        confidence_text = (
+            f"{diag['confidence'] * 100:.1f}%"
+            if diag.get("confidence") is not None
+            else "Not available"
+        )
+
+        return (
+            f"**Status**: {status}\n"
+            f"**Confidence**: {confidence_text}\n"
+            f"**Localization**: {coords}",
+            findings,
+            impression
+        )
     def handle_vqa(image, question, chat_history):
         if image is None:
             return chat_history, "Please upload an X-ray radiograph first."
 
         if not question or not question.strip():
             return chat_history, ""
-
         temp_dir = os.path.join(PROJECT_DIR, "data", "temp_uploads")
         os.makedirs(temp_dir, exist_ok=True)
 
@@ -90,13 +117,31 @@ def run_gradio_app(port=7860, share=False):
         temp_dir = os.path.join(PROJECT_DIR, "data", "temp_uploads")
         os.makedirs(temp_dir, exist_ok=True)
         temp_path = os.path.join(temp_dir, f"report_{int(time.time())}.jpg")
-        image.save(temp_path)
+        image.save(temp_path)  
 
+        
         diag = engine.diagnose_xray(temp_path)
-        res = generate_clinical_report(diag, output_dir=os.path.join(PROJECT_DIR, "reports"))
-        download_file = res["pdf_path"] if res.get("pdf_path") and os.path.exists(res["pdf_path"]) else res["txt_path"]
-        return res["report_text"], download_file
-
+        status = "🔴 POSITIVE: FRACTURE DETECTED" if diag["fracture_detected"] else "🟢 NEGATIVE: NO FRACTURE"
+        findings = diag["findings"]
+        impression = diag["impression"]
+        coords = (
+            f"Coordinates: {diag.get('bounding_box')}"
+            if diag.get("bounding_box") is not None
+            else "Not available"
+        )
+        confidence_text = (
+            f"{diag['confidence'] * 100:.1f}%"
+            if diag.get("confidence") is not None
+            else "Not available"
+        )
+        
+        return (
+            f"**Status**: {status}\n"
+            f"**Confidence**: {confidence_text}\n"
+            f"**Localization**: {coords}",
+            findings,
+            impression
+        )
     with gr.Blocks(title="FracAtlas Med-VQA Diagnostic Platform", theme=gr.themes.Soft()) as demo:
         gr.Markdown(
             """

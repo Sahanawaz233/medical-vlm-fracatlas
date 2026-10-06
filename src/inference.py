@@ -74,11 +74,13 @@ class MedicalVLMInferenceEngine:
             raise FileNotFoundError(f"Radiograph image not found: {image_path}")
 
         # If live neural model is loaded, run transformer generation
+        if not self.is_loaded:
+            self.load_model()
+
         if self.is_loaded:
             return self._run_neural_inference(image_path)
-        else:
-            return self._clinical_evaluation_heuristic(image_path)
 
+        raise RuntimeError("VLM model could not be loaded.")
     def answer_query(self, image_path, question):
         """Answer arbitrary clinical user questions about the radiograph (Med-VQA)."""
         diag = self.diagnose_xray(image_path)
@@ -102,7 +104,7 @@ class MedicalVLMInferenceEngine:
         # Default comprehensive summary
         return f"{diag['findings']}\n\nImpression: {diag['impression']}"
     def _run_neural_inference(self, image_path):
-        """Run actual token forward pass through the Vision-Language Model."""
+        """Run Qwen2-VL inference on an X-ray and extract fracture status."""
         from PIL import Image
         import torch
 
@@ -114,7 +116,11 @@ class MedicalVLMInferenceEngine:
                 "content": [
                     {
                         "type": "text",
-                        "text": "You are an expert orthopedic radiologist specializing in musculoskeletal radiographs."
+                       "text": (
+    "You are an orthopedic radiology assistant. "
+    "Examine this musculoskeletal radiograph carefully. "
+    "Describe your diagnostic findings and indicate if any fracture is present."
+)
                     }
                 ],
             },
@@ -127,7 +133,10 @@ class MedicalVLMInferenceEngine:
                     },
                     {
                         "type": "text",
-                        "text": "Examine this musculoskeletal radiograph. Describe your diagnostic findings and impression."
+                        "text": (
+    "Examine this musculoskeletal radiograph carefully. "
+    "Describe your diagnostic findings and indicate if any fracture is present."
+)
                     },
                 ],
             },
@@ -152,32 +161,62 @@ class MedicalVLMInferenceEngine:
         with torch.no_grad():
             outputs = self.model.generate(
                 **inputs,
-                max_new_tokens=256
+                max_new_tokens=128
             )
 
-        generated_text = self.processor.batch_decode(
+        decoded_outputs = self.processor.batch_decode(
             outputs,
             skip_special_tokens=True
-        )[0]
-
-        fracture_detected = (
-            "fracture" in generated_text.lower()
-            and "no acute fracture" not in generated_text.lower()
         )
+        generated_text = decoded_outputs[0].strip()
 
+        # Extract only the actual generated answer after the assistant marker
+        lower_generated = generated_text.lower()
+
+        if "assistant" in lower_generated:
+            assistant_pos = lower_generated.rfind("assistant")
+            generated_text = generated_text[
+                assistant_pos + len("assistant"):
+            ].strip()
+
+        # Remove any remaining colon
+        if generated_text.startswith(":"):
+            generated_text = generated_text[1:].strip()
+
+        print("[DEBUG] CLEAN MODEL OUTPUT:", repr(generated_text))
+
+        lower_text = generated_text.lower().strip()
+
+        # Determine fracture status from the beginning of the answer
+                # Determine fracture status from the model's complete answer
+        if any(phrase in lower_text for phrase in [
+            "no acute fracture",
+            "no fracture",
+            "no fractures",
+            "without fracture",
+            "fracture is absent",
+            "no evidence of fracture"
+        ]):
+            fracture_detected = False
+
+        elif any(phrase in lower_text for phrase in [
+            "fracture is present",
+            "fracture is identified",
+            "visible fracture",
+            "there is a fracture",
+            "there is also a fracture",
+            "acute fracture is present",
+            "fracture"
+        ]):
+            fracture_detected = True
+
+        else:
+            fracture_detected = False
         return {
             "image_path": image_path,
             "fracture_detected": fracture_detected,
-            "confidence": 0.94 if fracture_detected else 0.97,
-            "findings": generated_text.strip(),
-            "impression": (
-                "Acute musculoskeletal fracture confirmed."
-                if fracture_detected
-                else "No acute bone fracture identified."
-            ),
-            "bounding_box": (
-                "[1242, 929, 1515, 1076]"
-                if fracture_detected
-                else None
-            )
+            "confidence": None,
+            "findings": generated_text,
+            "impression": generated_text,
+            "bounding_box": None
         }

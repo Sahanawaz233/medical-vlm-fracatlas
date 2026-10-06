@@ -85,7 +85,7 @@ def evaluate_test_set(test_json_path, output_dir="evaluation_results", max_sampl
                 "image": image_rel,
                 "ground_truth": "FRACTURED" if ground_truth_fracture else "NORMAL",
                 "prediction": "FRACTURED" if pred_fracture else "NORMAL",
-                "confidence": round(confidence, 3),
+                "confidence": round(confidence, 3) if confidence is not None else None,
                 "result": result_type
             })
 
